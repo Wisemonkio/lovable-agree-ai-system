@@ -62,15 +62,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - yfbp - 21600
     
     return {
-      monthlyGross: annualGross / 12,
-      annualBasic,
-      annualHra,
-      annualLta,
-      annualSpecialAllowance,
-      monthlyBasic: annualBasic / 12,
-      monthlyHra: annualHra / 12,
-      monthlyLta: annualLta / 12,
-      monthlySpecialAllowance: annualSpecialAllowance / 12,
+      monthly_gross: annualGross / 12,
+      annual_basic: annualBasic,
+      annual_hra: annualHra,
+      annual_lta: annualLta,
+      annual_special_allowance: annualSpecialAllowance,
+      monthly_basic: annualBasic / 12,
+      monthly_hra: annualHra / 12,
+      monthly_lta: annualLta / 12,
+      monthly_special_allowance: annualSpecialAllowance / 12,
       yfbp,
       mfbp: yfbp / 12
     }
@@ -90,7 +90,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       // Step 1: Create employee record
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
-        .insert([{
+        .insert({
           user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -108,7 +108,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           pincode: formData.pincode,
           place: formData.place,
           ...salaryBreakdown
-        }])
+        })
         .select()
         .single()
       
