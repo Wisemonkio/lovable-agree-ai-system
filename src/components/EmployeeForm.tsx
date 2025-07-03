@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { generateEmployeeAgreement } from '../services/agreementService'
 
@@ -27,6 +28,7 @@ interface EmployeeFormData {
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
+  const { user } = useAuth()
   const [formData, setFormData] = useState<EmployeeFormData>({
     firstName: '',
     lastName: '',
@@ -51,22 +53,45 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [agreementStatus, setAgreementStatus] = useState<'creating' | 'generating' | 'completed' | 'failed' | null>(null)
   
-  const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  )
+  // Calculate salary breakdown
+  const calculateSalaryBreakdown = (annualGross: number) => {
+    const annualBasic = annualGross / 2
+    const annualHra = annualBasic / 2
+    const annualLta = annualBasic / 5
+    const yfbp = annualGross <= 1275000 ? 0 : 169392
+    const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - yfbp - 21600
+    
+    return {
+      monthlyGross: annualGross / 12,
+      annualBasic,
+      annualHra,
+      annualLta,
+      annualSpecialAllowance,
+      monthlyBasic: annualBasic / 12,
+      monthlyHra: annualHra / 12,
+      monthlyLta: annualLta / 12,
+      monthlySpecialAllowance: annualSpecialAllowance / 12,
+      yfbp,
+      mfbp: yfbp / 12
+    }
+  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
+    
     setSubmitting(true)
     setError(null)
     setAgreementStatus('creating')
     
     try {
+      const salaryBreakdown = calculateSalaryBreakdown(formData.annualGrossSalary)
+      
       // Step 1: Create employee record
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
         .insert([{
+          user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
           email: formData.email,
@@ -81,7 +106,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           city: formData.city,
           state: formData.state,
           pincode: formData.pincode,
-          place: formData.place
+          place: formData.place,
+          ...salaryBreakdown
         }])
         .select()
         .single()

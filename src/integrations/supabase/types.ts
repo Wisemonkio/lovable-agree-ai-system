@@ -9,7 +9,150 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      employee_details: {
+        Row: {
+          address_line1: string | null
+          age: number | null
+          agreement_status: string | null
+          annual_basic: number
+          annual_gross_salary: number
+          annual_hra: number
+          annual_lta: number
+          annual_special_allowance: number
+          city: string | null
+          client_name: string | null
+          created_at: string
+          doc_url: string | null
+          email: string
+          fathers_name: string | null
+          first_name: string
+          id: string
+          job_title: string
+          joining_date: string
+          last_name: string
+          manager_details: string | null
+          mfbp: number
+          monthly_basic: number
+          monthly_gross: number
+          monthly_hra: number
+          monthly_lta: number
+          monthly_special_allowance: number
+          pdf_download_url: string | null
+          pdf_url: string | null
+          pincode: string | null
+          place: string | null
+          processing_completed_at: string | null
+          processing_started_at: string | null
+          state: string | null
+          updated_at: string
+          user_id: string | null
+          yfbp: number
+        }
+        Insert: {
+          address_line1?: string | null
+          age?: number | null
+          agreement_status?: string | null
+          annual_basic: number
+          annual_gross_salary: number
+          annual_hra: number
+          annual_lta: number
+          annual_special_allowance: number
+          city?: string | null
+          client_name?: string | null
+          created_at?: string
+          doc_url?: string | null
+          email: string
+          fathers_name?: string | null
+          first_name: string
+          id?: string
+          job_title: string
+          joining_date: string
+          last_name: string
+          manager_details?: string | null
+          mfbp: number
+          monthly_basic: number
+          monthly_gross: number
+          monthly_hra: number
+          monthly_lta: number
+          monthly_special_allowance: number
+          pdf_download_url?: string | null
+          pdf_url?: string | null
+          pincode?: string | null
+          place?: string | null
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string | null
+          yfbp: number
+        }
+        Update: {
+          address_line1?: string | null
+          age?: number | null
+          agreement_status?: string | null
+          annual_basic?: number
+          annual_gross_salary?: number
+          annual_hra?: number
+          annual_lta?: number
+          annual_special_allowance?: number
+          city?: string | null
+          client_name?: string | null
+          created_at?: string
+          doc_url?: string | null
+          email?: string
+          fathers_name?: string | null
+          first_name?: string
+          id?: string
+          job_title?: string
+          joining_date?: string
+          last_name?: string
+          manager_details?: string | null
+          mfbp?: number
+          monthly_basic?: number
+          monthly_gross?: number
+          monthly_hra?: number
+          monthly_lta?: number
+          monthly_special_allowance?: number
+          pdf_download_url?: string | null
+          pdf_url?: string | null
+          pincode?: string | null
+          place?: string | null
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string | null
+          yfbp?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

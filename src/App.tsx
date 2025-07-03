@@ -1,30 +1,33 @@
 
-import React, { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import EmployeeForm from './components/EmployeeForm'
-import EmployeeList from './components/EmployeeList'
-import Navigation from './components/Navigation'
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { Toaster } from '@/components/ui/toaster'
+import Auth from '@/pages/Auth'
+import Dashboard from '@/pages/Dashboard'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 function App() {
-  const [currentView, setCurrentView] = useState<'list' | 'add'>('list')
-  
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation currentView={currentView} setCurrentView={setCurrentView} />
-      
-      <main className="container mx-auto px-4 py-8">
-        {currentView === 'list' ? (
-          <EmployeeList />
-        ) : (
-          <EmployeeForm onSuccess={() => setCurrentView('list')} />
-        )}
-      </main>
-    </div>
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <Toaster />
+        </div>
+      </Router>
+    </AuthProvider>
   )
 }
 
