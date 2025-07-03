@@ -54,99 +54,159 @@ const formatDate = (dateString: string): string => {
   })
 }
 
-const generatePDF = (employee: Employee): Uint8Array => {
+const fetchGoogleDocsContent = async (docId: string): Promise<string> => {
+  try {
+    // Use the public export URL to get plain text content
+    const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`
+    const response = await fetch(exportUrl)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch document: ${response.status}`)
+    }
+    
+    const content = await response.text()
+    return content
+  } catch (error) {
+    console.error('Error fetching Google Docs content:', error)
+    // Fallback to default template if Google Docs fetch fails
+    return getDefaultTemplate()
+  }
+}
+
+const getDefaultTemplate = (): string => {
+  return `EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is entered into on [DATE] between [COMPANY_NAME] ("Company") and [EMPLOYEE_NAME] ("Employee").
+
+EMPLOYEE INFORMATION:
+Name: [EMPLOYEE_NAME]
+Father's Name: [FATHERS_NAME]
+Age: [AGE]
+Email: [EMAIL]
+Address: [ADDRESS]
+
+EMPLOYMENT DETAILS:
+Position: [JOB_TITLE]
+Joining Date: [JOINING_DATE]
+Place of Work: [PLACE]
+Client: [CLIENT_NAME]
+Manager: [MANAGER_DETAILS]
+
+COMPENSATION:
+Annual Gross Salary: [ANNUAL_GROSS_SALARY]
+Monthly Gross Salary: [MONTHLY_GROSS]
+
+SALARY BREAKDOWN:
+- Basic Salary: [ANNUAL_BASIC] per annum ([MONTHLY_BASIC] per month)
+- House Rent Allowance (HRA): [ANNUAL_HRA] per annum ([MONTHLY_HRA] per month)
+- Leave Travel Allowance (LTA): [ANNUAL_LTA] per annum ([MONTHLY_LTA] per month)
+- Special Allowance: [ANNUAL_SPECIAL_ALLOWANCE] per annum ([MONTHLY_SPECIAL_ALLOWANCE] per month)
+- Flexible Benefits: [YFBP] per annum ([MFBP] per month)
+
+TERMS AND CONDITIONS:
+1. This agreement is subject to company policies and procedures.
+2. The employee agrees to maintain confidentiality of company information.
+3. Either party may terminate this agreement with 30 days written notice.
+4. The employee agrees to perform duties diligently and professionally.
+5. This agreement is governed by the laws of India.
+
+SIGNATURES:
+Employee: _____________________ Date: _____________
+[EMPLOYEE_NAME]
+
+Company Representative: _____________________ Date: _____________
+[COMPANY_NAME]`
+}
+
+const replacePlaceholders = (template: string, employee: Employee): string => {
+  const fullAddress = [
+    employee.address_line1,
+    employee.city,
+    employee.state,
+    employee.pincode
+  ].filter(Boolean).join(', ')
+
+  const placeholders = {
+    '[DATE]': formatDate(new Date().toISOString()),
+    '[COMPANY_NAME]': 'Your Company Name',
+    '[EMPLOYEE_NAME]': `${employee.first_name} ${employee.last_name}`,
+    '[FATHERS_NAME]': employee.fathers_name || 'N/A',
+    '[AGE]': employee.age?.toString() || 'N/A',
+    '[EMAIL]': employee.email,
+    '[ADDRESS]': fullAddress || 'N/A',
+    '[JOB_TITLE]': employee.job_title,
+    '[JOINING_DATE]': formatDate(employee.joining_date),
+    '[PLACE]': employee.place || 'N/A',
+    '[CLIENT_NAME]': employee.client_name || 'N/A',
+    '[MANAGER_DETAILS]': employee.manager_details || 'N/A',
+    '[ANNUAL_GROSS_SALARY]': formatCurrency(employee.annual_gross_salary),
+    '[MONTHLY_GROSS]': formatCurrency(employee.monthly_gross),
+    '[ANNUAL_BASIC]': formatCurrency(employee.annual_basic),
+    '[MONTHLY_BASIC]': formatCurrency(employee.monthly_basic),
+    '[ANNUAL_HRA]': formatCurrency(employee.annual_hra),
+    '[MONTHLY_HRA]': formatCurrency(employee.monthly_hra),
+    '[ANNUAL_LTA]': formatCurrency(employee.annual_lta),
+    '[MONTHLY_LTA]': formatCurrency(employee.monthly_lta),
+    '[ANNUAL_SPECIAL_ALLOWANCE]': formatCurrency(employee.annual_special_allowance),
+    '[MONTHLY_SPECIAL_ALLOWANCE]': formatCurrency(employee.monthly_special_allowance),
+    '[YFBP]': formatCurrency(employee.yfbp),
+    '[MFBP]': formatCurrency(employee.mfbp)
+  }
+
+  let processedTemplate = template
+  Object.entries(placeholders).forEach(([placeholder, value]) => {
+    processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), value)
+  })
+
+  return processedTemplate
+}
+
+const generatePDF = (content: string, employee: Employee): Uint8Array => {
   console.log('Generating PDF for employee:', employee.first_name, employee.last_name)
   
   const doc = new jsPDF()
   
-  // Header
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text('EMPLOYMENT AGREEMENT', 105, 20, { align: 'center' })
+  // Split content into lines and handle page breaks
+  const lines = content.split('\n')
+  let yPosition = 20
+  const lineHeight = 6
+  const pageHeight = 280
   
   doc.setFontSize(12)
   doc.setFont('helvetica', 'normal')
-  doc.text('This Employment Agreement is entered into between:', 20, 40)
   
-  // Company details
-  doc.setFont('helvetica', 'bold')
-  doc.text('Company: Your Company Name', 20, 55)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Address: Company Address', 20, 65)
-  
-  // Employee details
-  doc.setFont('helvetica', 'bold')
-  doc.text('Employee Details:', 20, 85)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Name: ${employee.first_name} ${employee.last_name}`, 20, 95)
-  doc.text(`Email: ${employee.email}`, 20, 105)
-  doc.text(`Job Title: ${employee.job_title}`, 20, 115)
-  doc.text(`Father's Name: ${employee.fathers_name || 'N/A'}`, 20, 125)
-  
-  if (employee.address_line1) {
-    doc.text(`Address: ${employee.address_line1}`, 20, 135)
-    if (employee.city || employee.state) {
-      doc.text(`${employee.city || ''} ${employee.state || ''} ${employee.pincode || ''}`, 20, 145)
+  lines.forEach((line) => {
+    // Check if we need a new page
+    if (yPosition > pageHeight) {
+      doc.addPage()
+      yPosition = 20
     }
-  }
-  
-  // Employment terms
-  doc.setFont('helvetica', 'bold')
-  doc.text('Employment Terms:', 20, 165)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Joining Date: ${formatDate(employee.joining_date)}`, 20, 175)
-  doc.text(`Place of Work: ${employee.place || 'To be determined'}`, 20, 185)
-  
-  if (employee.client_name) {
-    doc.text(`Client: ${employee.client_name}`, 20, 195)
-  }
-  
-  if (employee.manager_details) {
-    doc.text(`Manager: ${employee.manager_details}`, 20, 205)
-  }
-  
-  // Salary breakdown
-  doc.setFont('helvetica', 'bold')
-  doc.text('Salary Structure:', 20, 225)
-  doc.setFont('helvetica', 'normal')
-  
-  const salaryY = 240
-  doc.text(`Annual Gross Salary: ${formatCurrency(employee.annual_gross_salary)}`, 20, salaryY)
-  doc.text(`Monthly Gross: ${formatCurrency(employee.monthly_gross)}`, 20, salaryY + 10)
-  doc.text(`Annual Basic: ${formatCurrency(employee.annual_basic)}`, 20, salaryY + 20)
-  doc.text(`Monthly Basic: ${formatCurrency(employee.monthly_basic)}`, 20, salaryY + 30)
-  doc.text(`Annual HRA: ${formatCurrency(employee.annual_hra)}`, 20, salaryY + 40)
-  doc.text(`Monthly HRA: ${formatCurrency(employee.monthly_hra)}`, 20, salaryY + 50)
-  
-  if (employee.yfbp > 0) {
-    doc.text(`Yearly Flexible Benefits: ${formatCurrency(employee.yfbp)}`, 20, salaryY + 60)
-    doc.text(`Monthly Flexible Benefits: ${formatCurrency(employee.mfbp)}`, 20, salaryY + 70)
-  }
-  
-  // Terms and conditions
-  doc.addPage()
-  doc.setFont('helvetica', 'bold')
-  doc.text('Terms and Conditions:', 20, 20)
-  doc.setFont('helvetica', 'normal')
-  
-  const terms = [
-    '1. This agreement is subject to company policies and procedures.',
-    '2. The employee agrees to maintain confidentiality of company information.',
-    '3. Either party may terminate this agreement with 30 days written notice.',
-    '4. The employee agrees to perform duties diligently and professionally.',
-    '5. This agreement is governed by the laws of India.'
-  ]
-  
-  terms.forEach((term, index) => {
-    doc.text(term, 20, 35 + (index * 15), { maxWidth: 170 })
+    
+    // Handle different text styles
+    if (line.includes('EMPLOYMENT AGREEMENT') || line.includes('EMPLOYEE INFORMATION:') || 
+        line.includes('EMPLOYMENT DETAILS:') || line.includes('COMPENSATION:') || 
+        line.includes('SALARY BREAKDOWN:') || line.includes('TERMS AND CONDITIONS:') || 
+        line.includes('SIGNATURES:')) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(14)
+    } else {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(11)
+    }
+    
+    // Split long lines
+    const splitLines = doc.splitTextToSize(line, 170)
+    splitLines.forEach((splitLine: string) => {
+      if (yPosition > pageHeight) {
+        doc.addPage()
+        yPosition = 20
+      }
+      doc.text(splitLine, 20, yPosition)
+      yPosition += lineHeight
+    })
+    
+    yPosition += 2 // Extra spacing after each original line
   })
-  
-  // Signatures
-  doc.text('Employee Signature: _________________', 20, 150)
-  doc.text('Date: _________________', 120, 150)
-  
-  doc.text('Company Representative: _________________', 20, 180)
-  doc.text('Date: _________________', 120, 180)
   
   return doc.output('arraybuffer')
 }
@@ -159,7 +219,6 @@ serve(async (req) => {
   try {
     console.log('=== Edge Function Started ===')
     
-    // Use service role key for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
@@ -223,9 +282,18 @@ serve(async (req) => {
 
     console.log('Employee fetched successfully:', employee.first_name, employee.last_name)
 
+    // Fetch Google Docs template
+    console.log('Fetching Google Docs template...')
+    const docId = '1CpMQCfZn4ePyNr_2bYfr2IgCTZMeAJ_Og3vDwmR--zc'
+    const templateContent = await fetchGoogleDocsContent(docId)
+    
+    // Replace placeholders with employee data
+    console.log('Processing template with employee data...')
+    const processedContent = replacePlaceholders(templateContent, employee as Employee)
+
     // Generate PDF
     console.log('Generating PDF...')
-    const pdfBuffer = generatePDF(employee as Employee)
+    const pdfBuffer = generatePDF(processedContent, employee as Employee)
     const fileName = `employment_agreement_${employee.first_name}_${employee.last_name}_${Date.now()}.pdf`
 
     console.log('PDF generated, uploading to storage...')
@@ -298,7 +366,6 @@ serve(async (req) => {
 
     if (insertError) {
       console.error('Insert error:', insertError)
-      // Don't throw here as the main process is complete
       console.log('Warning: Failed to create generated_agreements record, but PDF generation was successful')
     }
 
@@ -313,7 +380,7 @@ serve(async (req) => {
           pdf_download_url: publicUrl,
           doc_url: publicUrl
         },
-        message: 'Employment agreement generated successfully'
+        message: 'Employment agreement generated successfully using Google Docs template'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
