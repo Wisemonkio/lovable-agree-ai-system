@@ -14,9 +14,14 @@ export const generatePDF = (content: string, employee: Employee): Uint8Array => 
   const maxWidth = pageWidth - (margin * 2)
   
   let yPosition = margin
-  const normalLineHeight = 7
-  const headerLineHeight = 10
-  const sectionSpacing = 8
+  const normalFontSize = 11
+  const headerFontSize = 14
+  const titleFontSize = 16
+  const normalLineHeight = 6
+  const headerLineHeight = 8
+  const titleLineHeight = 10
+  const sectionSpacing = 10
+  const paragraphSpacing = 4
   
   // Split content into lines
   const lines = content.split('\n')
@@ -25,35 +30,35 @@ export const generatePDF = (content: string, employee: Employee): Uint8Array => 
     if (yPosition + requiredHeight > pageHeight - margin) {
       doc.addPage()
       yPosition = margin
+      console.log('Added new page, reset yPosition to:', yPosition)
     }
   }
   
-  const addText = (text: string, fontSize: number = 11, fontStyle: string = 'normal', isHeader: boolean = false) => {
+  const addText = (text: string, fontSize: number = normalFontSize, fontStyle: string = 'normal', lineHeight: number = normalLineHeight, addSpacing: boolean = false) => {
     if (!text.trim()) {
-      yPosition += normalLineHeight / 2
+      yPosition += lineHeight / 2
       return
     }
     
     doc.setFontSize(fontSize)
     doc.setFont('helvetica', fontStyle as any)
     
-    const lineHeight = isHeader ? headerLineHeight : normalLineHeight
     const splitText = doc.splitTextToSize(text, maxWidth)
+    const requiredHeight = splitText.length * lineHeight + (addSpacing ? sectionSpacing : 0)
     
-    addNewPageIfNeeded(splitText.length * lineHeight)
+    addNewPageIfNeeded(requiredHeight)
     
-    splitText.forEach((line: string, index: number) => {
+    splitText.forEach((line: string) => {
       doc.text(line, margin, yPosition)
       yPosition += lineHeight
     })
     
-    // Add extra spacing after headers and sections
-    if (isHeader) {
+    if (addSpacing) {
       yPosition += sectionSpacing - lineHeight
     }
   }
   
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     const trimmedLine = line.trim()
     
     if (!trimmedLine) {
@@ -63,8 +68,8 @@ export const generatePDF = (content: string, employee: Employee): Uint8Array => 
     
     // Main title
     if (trimmedLine.includes('EMPLOYMENT AGREEMENT')) {
-      addText(trimmedLine, 16, 'bold', true)
-      yPosition += sectionSpacing
+      if (index > 0) yPosition += sectionSpacing
+      addText(trimmedLine, titleFontSize, 'bold', titleLineHeight, true)
     }
     // Section headers
     else if (
@@ -76,18 +81,26 @@ export const generatePDF = (content: string, employee: Employee): Uint8Array => 
       trimmedLine.includes('SIGNATURES:')
     ) {
       yPosition += sectionSpacing / 2
-      addText(trimmedLine, 13, 'bold', true)
+      addText(trimmedLine, headerFontSize, 'bold', headerLineHeight, false)
+      yPosition += paragraphSpacing
     }
     // Numbered terms
     else if (trimmedLine.match(/^\d+\./)) {
-      addText(trimmedLine, 11, 'normal')
+      addText(trimmedLine, normalFontSize, 'normal', normalLineHeight, false)
+      yPosition += paragraphSpacing
+    }
+    // Bullet points
+    else if (trimmedLine.startsWith('•')) {
+      addText(trimmedLine, normalFontSize, 'normal', normalLineHeight, false)
       yPosition += 2
     }
     // Regular content
     else {
-      addText(trimmedLine, 11, 'normal')
+      addText(trimmedLine, normalFontSize, 'normal', normalLineHeight, false)
+      yPosition += 1
     }
   })
   
+  console.log('PDF generation completed, final yPosition:', yPosition)
   return doc.output('arraybuffer')
 }

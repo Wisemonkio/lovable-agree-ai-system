@@ -25,8 +25,7 @@ export const getDefaultTemplate = (): string => {
 This Employment Agreement ("Agreement") is entered into on {{Agreement Date}} between {{client Name}} ("Company") and {{Full Name}} ("Employee").
 
 EMPLOYEE INFORMATION:
-Name: {{Full Name}}{{Fathers name section}}
-{{Age section}}
+Name: {{Full Name}}{{Fathers name section}}{{Age section}}
 Email: {{email}}{{Address section}}
 
 EMPLOYMENT DETAILS:
@@ -95,14 +94,16 @@ export const replacePlaceholders = (template: string, employee: Employee): strin
     '{{Agreement Date}}': formatDate(new Date().toISOString()),
     '{{Id}}': employee.id,
     
-    // Conditional sections
+    // Conditional sections - only show if data exists
     '{{Fathers name section}}': fathersName ? `\nFather's Name: ${fathersName}` : '',
     '{{Age section}}': age ? `\nAge: ${age}` : '',
     '{{Address section}}': address ? `\nAddress: ${address}` : '',
     '{{Place section}}': place ? `\nPlace of Work: ${place}` : '',
     '{{Client section}}': clientName ? `\nClient: ${clientName}` : '',
     '{{Manager section}}': manager ? `\nManager: ${manager}` : '',
-    '{{Company signature section}}': clientName ? `\nCompany Representative: _____________________ Date: _____________\n${clientName}` : '\nCompany Representative: _____________________ Date: _____________',
+    '{{Company signature section}}': clientName ? 
+      `\nCompany Representative: _____________________ Date: _____________\n${clientName}` : 
+      '\nCompany Representative: _____________________ Date: _____________',
   }
 
   let processedTemplate = template
@@ -113,8 +114,11 @@ export const replacePlaceholders = (template: string, employee: Employee): strin
   // Clean up any remaining empty placeholder patterns
   processedTemplate = processedTemplate.replace(/\{\{[^}]+\}\}/g, '')
   
-  // Clean up excessive empty lines
+  // Clean up excessive empty lines but preserve intentional spacing
   processedTemplate = processedTemplate.replace(/\n\s*\n\s*\n/g, '\n\n')
+  
+  // Clean up trailing whitespace from lines
+  processedTemplate = processedTemplate.replace(/[ \t]+$/gm, '')
 
   return processedTemplate
 }
