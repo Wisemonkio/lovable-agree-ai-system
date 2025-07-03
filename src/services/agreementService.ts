@@ -11,6 +11,7 @@ export interface AgreementGenerationResponse {
   }
   message?: string
   error?: string
+  details?: string
 }
 
 export const generateEmployeeAgreement = async (employeeId: string): Promise<AgreementGenerationResponse> => {
@@ -27,13 +28,25 @@ export const generateEmployeeAgreement = async (employeeId: string): Promise<Agr
     }
     
     console.log('Edge Function response:', data)
+    
+    // Check if the response indicates failure
+    if (data && !data.success) {
+      console.error('Edge Function returned failure:', data)
+      return {
+        success: false,
+        error: data.error || 'Unknown error from Edge Function',
+        details: data.details || 'No additional details available'
+      }
+    }
+    
     return data as AgreementGenerationResponse
     
   } catch (error) {
     console.error('Error calling agreement generation:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      details: error instanceof Error ? error.stack : undefined
     }
   }
 }

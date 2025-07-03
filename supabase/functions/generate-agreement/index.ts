@@ -55,6 +55,8 @@ const formatDate = (dateString: string): string => {
 }
 
 const generatePDF = (employee: Employee): Uint8Array => {
+  console.log('Generating PDF for employee:', employee.first_name, employee.last_name)
+  
   const doc = new jsPDF()
   
   // Header
@@ -155,10 +157,29 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      'https://kzejmozxbhzkrbfmwmnx.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6ZWptb3p4Ymh6a3JiZm13bW54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1Mzc3MzMsImV4cCI6MjA2NzExMzczM30.dvMHh8cLAeYRbalHsA8x1QUI36nWP-xgkws11vnrKdI'
-    )
+    console.log('=== Edge Function Started ===')
+    
+    // Use service role key for admin operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    console.log('Environment check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      urlLength: supabaseUrl?.length || 0,
+      keyLength: supabaseServiceKey?.length || 0
+    })
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables')
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
 
     const { employee_id } = await req.json()
 
@@ -169,7 +190,8 @@ serve(async (req) => {
     console.log('Processing employee:', employee_id)
 
     // Update status to processing
-    await supabaseClient
+    console.log('Updating status to processing...')
+    const { error: statusError } = await supabaseClient
       .from('employee_details')
       .update({ 
         agreement_status: 'processing',
@@ -177,22 +199,38 @@ serve(async (req) => {
       })
       .eq('id', employee_id)
 
+    if (statusError) {
+      console.error('Status update error:', statusError)
+      throw new Error(`Failed to update status: ${statusError.message}`)
+    }
+
     // Fetch employee details
+    console.log('Fetching employee details...')
     const { data: employee, error: fetchError } = await supabaseClient
       .from('employee_details')
       .select('*')
       .eq('id', employee_id)
       .single()
 
-    if (fetchError || !employee) {
-      throw new Error(`Employee not found: ${fetchError?.message}`)
+    if (fetchError) {
+      console.error('Fetch error:', fetchError)
+      throw new Error(`Employee not found: ${fetchError.message}`)
     }
 
-    console.log('Generating PDF for employee:', employee.first_name, employee.last_name)
+    if (!employee) {
+      throw new Error('Employee data is null')
+    }
+
+    console.log('Employee fetched successfully:', employee.first_name, employee.last_name)
 
     // Generate PDF
+    console.log('Generating PDF...')
     const pdfBuffer = generatePDF(employee as Employee)
     const fileName = `employment_agreement_${employee.first_name}_${employee.last_name}_${Date.now()}.pdf`
+
+    console.log('PDF generated, uploading to storage...')
+    console.log('File name:', fileName)
+    console.log('Buffer size:', pdfBuffer.byteLength)
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseClient.storage
@@ -203,15 +241,21 @@ serve(async (req) => {
       })
 
     if (uploadError) {
+      console.error('Upload error:', uploadError)
       throw new Error(`Failed to upload PDF: ${uploadError.message}`)
     }
+
+    console.log('Upload successful:', uploadData)
 
     // Get public URL
     const { data: { publicUrl } } = supabaseClient.storage
       .from('employee-agreements')
       .getPublicUrl(fileName)
 
+    console.log('Public URL generated:', publicUrl)
+
     // Update employee record with URLs
+    console.log('Updating employee record with URLs...')
     const { error: updateError } = await supabaseClient
       .from('employee_details')
       .update({
@@ -223,18 +267,23 @@ serve(async (req) => {
       .eq('id', employee_id)
 
     if (updateError) {
+      console.error('Update error:', updateError)
       throw new Error(`Failed to update employee record: ${updateError.message}`)
     }
 
     // Create generated_agreements record
-    await supabaseClient
+    console.log('Creating generated_agreements record...')
+    const processingStartTime = employee.processing_started_at ? new Date(employee.processing_started_at).getTime() : Date.now()
+    const processingTime = Math.floor((Date.now() - processingStartTime) / 1000)
+
+    const { error: insertError } = await supabaseClient
       .from('generated_agreements')
       .insert({
         employee_id: employee_id,
         pdf_download_url: publicUrl,
         file_name: fileName,
         generation_status: 'completed',
-        processing_time_seconds: Math.floor((Date.now() - new Date(employee.processing_started_at || Date.now()).getTime()) / 1000),
+        processing_time_seconds: processingTime,
         salary_breakdown: {
           annual_gross_salary: employee.annual_gross_salary,
           monthly_gross: employee.monthly_gross,
@@ -247,7 +296,13 @@ serve(async (req) => {
         }
       })
 
-    console.log('Agreement generated successfully for employee:', employee_id)
+    if (insertError) {
+      console.error('Insert error:', insertError)
+      // Don't throw here as the main process is complete
+      console.log('Warning: Failed to create generated_agreements record, but PDF generation was successful')
+    }
+
+    console.log('=== Agreement generated successfully ===')
 
     return new Response(
       JSON.stringify({
@@ -267,12 +322,16 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error generating agreement:', error)
+    console.error('=== Edge Function Error ===')
+    console.error('Error details:', error)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Failed to generate agreement'
+        error: error.message || 'Failed to generate agreement',
+        details: error.stack || 'No stack trace available'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
