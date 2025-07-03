@@ -1,27 +1,31 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+import React, { useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import EmployeeForm from './components/EmployeeForm'
+import EmployeeList from './components/EmployeeList'
+import Navigation from './components/Navigation'
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+)
 
-export default App;
+function App() {
+  const [currentView, setCurrentView] = useState<'list' | 'add'>('list')
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation currentView={currentView} setCurrentView={setCurrentView} />
+      
+      <main className="container mx-auto px-4 py-8">
+        {currentView === 'list' ? (
+          <EmployeeList />
+        ) : (
+          <EmployeeForm onSuccess={() => setCurrentView('list')} />
+        )}
+      </main>
+    </div>
+  )
+}
+
+export default App
