@@ -1,9 +1,35 @@
 
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FileText, Users, Download, CheckCircle, ArrowRight } from 'lucide-react'
 
 const Landing: React.FC = () => {
+  const navigate = useNavigate()
+  
+  console.log('Landing page rendering')
+  
+  const handleGetStartedClick = (e: React.MouseEvent) => {
+    console.log('Get Started button clicked')
+    e.preventDefault()
+    try {
+      navigate('/auth')
+      console.log('Navigate to /auth called')
+    } catch (error) {
+      console.error('Navigation error:', error)
+    }
+  }
+
+  const handleStartCreatingClick = (e: React.MouseEvent) => {
+    console.log('Start Creating Agreements button clicked')
+    e.preventDefault()
+    try {
+      navigate('/auth')
+      console.log('Navigate to /auth called')
+    } catch (error) {
+      console.error('Navigation error:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
@@ -14,12 +40,12 @@ const Landing: React.FC = () => {
               <FileText className="h-8 w-8 text-blue-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">EmployeeAgreements</span>
             </div>
-            <Link
-              to="/auth"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            <button
+              onClick={handleGetStartedClick}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
             >
               Get Started
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -37,13 +63,13 @@ const Landing: React.FC = () => {
               Create professional, legally compliant documents in seconds.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/auth"
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+              <button
+                onClick={handleStartCreatingClick}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center cursor-pointer"
               >
                 Start Creating Agreements
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </button>
               <a
                 href="#features"
                 className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors"
@@ -166,13 +192,13 @@ const Landing: React.FC = () => {
           <p className="text-xl text-blue-100 mb-8">
             Join businesses that trust our platform for their employment agreements
           </p>
-          <Link
-            to="/auth"
-            className="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center"
+          <button
+            onClick={handleGetStartedClick}
+            className="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center cursor-pointer"
           >
             Get Started Now
             <ArrowRight className="ml-2 h-5 w-5" />
-          </Link>
+          </button>
         </div>
       </section>
 

@@ -10,6 +10,8 @@ import { Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const Auth: React.FC = () => {
+  console.log('Auth page rendering')
+  
   const { signIn, signUp, user, loading } = useAuth()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
@@ -18,8 +20,10 @@ const Auth: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Auth useEffect - user:', user, 'loading:', loading)
     if (user && !loading) {
-      navigate('/')
+      console.log('User authenticated, redirecting to dashboard')
+      navigate('/dashboard')
     }
   }, [user, loading, navigate])
 
@@ -87,6 +91,7 @@ const Auth: React.FC = () => {
   }
 
   if (loading) {
+    console.log('Auth page showing loading state')
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -94,6 +99,8 @@ const Auth: React.FC = () => {
     )
   }
 
+  console.log('Auth page rendering main content')
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
