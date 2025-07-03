@@ -76,32 +76,32 @@ const fetchGoogleDocsContent = async (docId: string): Promise<string> => {
 const getDefaultTemplate = (): string => {
   return `EMPLOYMENT AGREEMENT
 
-This Employment Agreement ("Agreement") is entered into on [DATE] between [COMPANY_NAME] ("Company") and [EMPLOYEE_NAME] ("Employee").
+This Employment Agreement ("Agreement") is entered into on {{Agreement Date}} between {{client Name}} ("Company") and {{Full Name}} ("Employee").
 
 EMPLOYEE INFORMATION:
-Name: [EMPLOYEE_NAME]
-Father's Name: [FATHERS_NAME]
-Age: [AGE]
-Email: [EMAIL]
-Address: [ADDRESS]
+Name: {{Full Name}}
+Father's Name: {{Fathers name}}
+Age: {{Age}}
+Email: {{email}}
+Address: {{Address Line 1}}, {{Address City}}, {{Address State}} - {{Pincode}}
 
 EMPLOYMENT DETAILS:
-Position: [JOB_TITLE]
-Joining Date: [JOINING_DATE]
-Place of Work: [PLACE]
-Client: [CLIENT_NAME]
-Manager: [MANAGER_DETAILS]
+Position: {{Job role}}
+Joining Date: {{Joining Date}}
+Place of Work: {{Place}}
+Client: {{client Name}}
+Manager: {{Manager}}
 
 COMPENSATION:
-Annual Gross Salary: [ANNUAL_GROSS_SALARY]
-Monthly Gross Salary: [MONTHLY_GROSS]
+Annual Gross Salary: {{Annual_gross}}
+Monthly Gross Salary: {{Monthly_gross}}
 
 SALARY BREAKDOWN:
-- Basic Salary: [ANNUAL_BASIC] per annum ([MONTHLY_BASIC] per month)
-- House Rent Allowance (HRA): [ANNUAL_HRA] per annum ([MONTHLY_HRA] per month)
-- Leave Travel Allowance (LTA): [ANNUAL_LTA] per annum ([MONTHLY_LTA] per month)
-- Special Allowance: [ANNUAL_SPECIAL_ALLOWANCE] per annum ([MONTHLY_SPECIAL_ALLOWANCE] per month)
-- Flexible Benefits: [YFBP] per annum ([MFBP] per month)
+- Basic Salary: {{Annual_basic}} per annum ({{Monthly_basic}} per month)
+- House Rent Allowance (HRA): {{Annual_hra}} per annum ({{Monthly_hra}} per month)
+- Leave Travel Allowance (LTA): {{Annual_LTA}} per annum ({{Monthly_LTA}} per month)
+- Special Allowance: {{Annual_special_allowance}} per annum ({{Monthly_special_allowance}} per month)
+- Flexible Benefits: {{YFBP}} per annum ({{MFBP}} per month)
 
 TERMS AND CONDITIONS:
 1. This agreement is subject to company policies and procedures.
@@ -112,10 +112,10 @@ TERMS AND CONDITIONS:
 
 SIGNATURES:
 Employee: _____________________ Date: _____________
-[EMPLOYEE_NAME]
+{{Full Name}}
 
 Company Representative: _____________________ Date: _____________
-[COMPANY_NAME]`
+{{client Name}}`
 }
 
 const replacePlaceholders = (template: string, employee: Employee): string => {
@@ -127,35 +127,49 @@ const replacePlaceholders = (template: string, employee: Employee): string => {
   ].filter(Boolean).join(', ')
 
   const placeholders = {
-    '[DATE]': formatDate(new Date().toISOString()),
-    '[COMPANY_NAME]': 'Your Company Name',
-    '[EMPLOYEE_NAME]': `${employee.first_name} ${employee.last_name}`,
-    '[FATHERS_NAME]': employee.fathers_name || 'N/A',
-    '[AGE]': employee.age?.toString() || 'N/A',
-    '[EMAIL]': employee.email,
-    '[ADDRESS]': fullAddress || 'N/A',
-    '[JOB_TITLE]': employee.job_title,
-    '[JOINING_DATE]': formatDate(employee.joining_date),
-    '[PLACE]': employee.place || 'N/A',
-    '[CLIENT_NAME]': employee.client_name || 'N/A',
-    '[MANAGER_DETAILS]': employee.manager_details || 'N/A',
-    '[ANNUAL_GROSS_SALARY]': formatCurrency(employee.annual_gross_salary),
-    '[MONTHLY_GROSS]': formatCurrency(employee.monthly_gross),
-    '[ANNUAL_BASIC]': formatCurrency(employee.annual_basic),
-    '[MONTHLY_BASIC]': formatCurrency(employee.monthly_basic),
-    '[ANNUAL_HRA]': formatCurrency(employee.annual_hra),
-    '[MONTHLY_HRA]': formatCurrency(employee.monthly_hra),
-    '[ANNUAL_LTA]': formatCurrency(employee.annual_lta),
-    '[MONTHLY_LTA]': formatCurrency(employee.monthly_lta),
-    '[ANNUAL_SPECIAL_ALLOWANCE]': formatCurrency(employee.annual_special_allowance),
-    '[MONTHLY_SPECIAL_ALLOWANCE]': formatCurrency(employee.monthly_special_allowance),
-    '[YFBP]': formatCurrency(employee.yfbp),
-    '[MFBP]': formatCurrency(employee.mfbp)
+    '{{client Name}}': employee.client_name || 'N/A',
+    '{{Manager}}': employee.manager_details || 'N/A',
+    '{{Client Address}}': 'N/A', // Not available in current data
+    '{{Client Country}}': 'N/A', // Not available in current data
+    '{{First Name}}': employee.first_name,
+    '{{last Name}}': employee.last_name,
+    '{{Full Name}}': `${employee.first_name} ${employee.last_name}`,
+    '{{relation}}': 'N/A', // Not available in current data
+    '{{email}}': employee.email,
+    '{{Job role}}': employee.job_title,
+    '{{Role details}}': 'N/A', // Not available in current data
+    '{{Annual_gross}}': formatCurrency(employee.annual_gross_salary),
+    '{{Annual_basic}}': formatCurrency(employee.annual_basic),
+    '{{Annual_hra}}': formatCurrency(employee.annual_hra),
+    '{{Annual_special_allowance}}': formatCurrency(employee.annual_special_allowance),
+    '{{YFBP}}': formatCurrency(employee.yfbp),
+    '{{Annual_LTA}}': formatCurrency(employee.annual_lta),
+    '{{Monthly_gross}}': formatCurrency(employee.monthly_gross),
+    '{{Monthly_basic}}': formatCurrency(employee.monthly_basic),
+    '{{Monthly_hra}}': formatCurrency(employee.monthly_hra),
+    '{{Monthly_special_allowance}}': formatCurrency(employee.monthly_special_allowance),
+    '{{Monthly_LTA}}': formatCurrency(employee.monthly_lta),
+    '{{MFBP}}': formatCurrency(employee.mfbp),
+    '{{bonus}}': 'N/A', // Not available in current data
+    '{{Joining Date}}': formatDate(employee.joining_date),
+    '{{Last Date}}': 'N/A', // Not available in current data
+    '{{Agreement Date}}': formatDate(new Date().toISOString()),
+    '{{Id}}': employee.id,
+    '{{Fathers name}}': employee.fathers_name || 'N/A',
+    '{{Age}}': employee.age?.toString() || 'N/A',
+    '{{Address Line 1}}': employee.address_line1 || 'N/A',
+    '{{Address Line 2}}': 'N/A', // Not available in current data
+    '{{Address City}}': employee.city || 'N/A',
+    '{{Pincode}}': employee.pincode || 'N/A',
+    '{{Address State}}': employee.state || 'N/A',
+    '{{Aadhar}}': 'N/A', // Not available in current data
+    '{{Place}}': employee.place || 'N/A',
+    '{{Roles and Responsibilities}}': 'N/A' // Not available in current data
   }
 
   let processedTemplate = template
   Object.entries(placeholders).forEach(([placeholder, value]) => {
-    processedTemplate = processedTemplate.replace(new RegExp(placeholder, 'g'), value)
+    processedTemplate = processedTemplate.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value)
   })
 
   return processedTemplate
