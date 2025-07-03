@@ -126,6 +126,62 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_agreements: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          file_name: string | null
+          generation_status: string | null
+          google_doc_id: string | null
+          google_doc_url: string | null
+          id: string
+          pdf_download_url: string | null
+          pdf_file_id: string | null
+          pdf_preview_url: string | null
+          placeholders_replaced: Json | null
+          processing_time_seconds: number | null
+          salary_breakdown: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          file_name?: string | null
+          generation_status?: string | null
+          google_doc_id?: string | null
+          google_doc_url?: string | null
+          id?: string
+          pdf_download_url?: string | null
+          pdf_file_id?: string | null
+          pdf_preview_url?: string | null
+          placeholders_replaced?: Json | null
+          processing_time_seconds?: number | null
+          salary_breakdown?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          file_name?: string | null
+          generation_status?: string | null
+          google_doc_id?: string | null
+          google_doc_url?: string | null
+          id?: string
+          pdf_download_url?: string | null
+          pdf_file_id?: string | null
+          pdf_preview_url?: string | null
+          placeholders_replaced?: Json | null
+          processing_time_seconds?: number | null
+          salary_breakdown?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_agreements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

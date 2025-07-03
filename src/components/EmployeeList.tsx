@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { Eye, Download, FileText, Calendar, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Eye, Download, FileText, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
 import EmployeeDetailModal from './EmployeeDetailModal'
 import ManualTriggerButton from './ManualTriggerButton'
+import { useToast } from '@/hooks/use-toast'
 
 interface Employee {
   id: string
@@ -45,6 +46,8 @@ const EmployeeList: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const { toast } = useToast()
   
   const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -67,7 +70,6 @@ const EmployeeList: React.FC = () => {
       })
       .subscribe()
     
-    // Return a synchronous cleanup function
     return () => {
       subscription.unsubscribe()
     }
@@ -84,8 +86,49 @@ const EmployeeList: React.FC = () => {
       setEmployees(data || [])
     } catch (error) {
       console.error('Error fetching employees:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch employees. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchEmployees()
+  }
+
+  const handleDownload = async (employee: Employee) => {
+    if (!employee.pdf_download_url) return
+    
+    try {
+      const response = await fetch(employee.pdf_download_url)
+      const blob = await response.blob()
+      
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `employment_agreement_${employee.first_name}_${employee.last_name}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast({
+        title: "Success",
+        description: "Agreement downloaded successfully!",
+      })
+    } catch (error) {
+      console.error('Error downloading agreement:', error)
+      toast({
+        title: "Error",
+        description: "Failed to download agreement. Please try again.",
+        variant: "destructive",
+      })
     }
   }
   
@@ -143,9 +186,19 @@ const EmployeeList: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Employee Directory</h1>
           <p className="text-gray-600 mt-1">Manage employees and their employment agreements</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-2">
-          <div className="text-sm text-gray-500">Total Employees</div>
-          <div className="text-2xl font-bold text-gray-900">{employees.length}</div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-2">
+            <div className="text-sm text-gray-500">Total Employees</div>
+            <div className="text-2xl font-bold text-gray-900">{employees.length}</div>
+          </div>
         </div>
       </div>
       
@@ -240,7 +293,7 @@ const EmployeeList: React.FC = () => {
                     
                     {employee.agreement_status === 'completed' && employee.pdf_download_url && (
                       <button
-                        onClick={() => window.open(employee.pdf_download_url, '_blank')}
+                        onClick={() => handleDownload(employee)}
                         className="bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
                       >
                         <Download className="w-4 h-4" />
