@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { generateEmployeeAgreement } from '../services/agreementService'
 
 interface EmployeeFormProps {
   onSuccess: () => void
@@ -48,6 +49,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [employeeId, setEmployeeId] = useState<string | null>(null)
+  const [agreementStatus, setAgreementStatus] = useState<'creating' | 'generating' | 'completed' | 'failed' | null>(null)
   
   const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -58,19 +60,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
+    setAgreementStatus('creating')
     
     try {
-      // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email || 
-          !formData.jobTitle || !formData.annualGrossSalary || !formData.joiningDate) {
-        throw new Error('Please fill in all required fields')
-      }
-      
-      if (formData.annualGrossSalary <= 0) {
-        throw new Error('Annual gross salary must be greater than 0')
-      }
-      
-      const { data, error } = await supabase
+      // Step 1: Create employee record
+      const { data: employee, error: createError } = await supabase
         .from('employee_details')
         .insert([{
           first_name: formData.firstName,
@@ -92,19 +86,30 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
         .select()
         .single()
       
-      if (error) throw error
+      if (createError) throw createError
       
-      setEmployeeId(data.id)
+      setEmployeeId(employee.id)
+      setAgreementStatus('generating')
+      
+      // Step 2: Call Edge Function to generate agreement
+      const agreementResult = await generateEmployeeAgreement(employee.id)
+      
+      if (!agreementResult.success) {
+        throw new Error(agreementResult.error || 'Failed to generate agreement')
+      }
+      
+      setAgreementStatus('completed')
       setSuccess(true)
       
-      // Auto-redirect after success
+      // Redirect after 3 seconds
       setTimeout(() => {
         onSuccess()
-      }, 4000)
+      }, 3000)
       
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating employee:', error)
-      setError(error.message || 'Failed to create employee')
+      setError(error instanceof Error ? error.message : 'Unknown error occurred')
+      setAgreementStatus('failed')
     } finally {
       setSubmitting(false)
     }
@@ -118,48 +123,67 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     }))
   }
   
-  const resetForm = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      jobTitle: '',
-      annualGrossSalary: 0,
-      joiningDate: '',
-      clientName: '',
-      managerDetails: '',
-      fathersName: '',
-      age: 0,
-      addressLine1: '',
-      city: '',
-      state: '',
-      pincode: '',
-      place: ''
-    })
-    setError(null)
-    setSuccess(false)
+  const getStatusMessage = () => {
+    switch (agreementStatus) {
+      case 'creating':
+        return 'Creating employee record...'
+      case 'generating':
+        return 'Generating employment agreement...'
+      case 'completed':
+        return 'Employment agreement generated successfully!'
+      case 'failed':
+        return 'Failed to generate agreement'
+      default:
+        return ''
+    }
   }
   
-  if (success) {
+  const getStatusIcon = () => {
+    switch (agreementStatus) {
+      case 'creating':
+      case 'generating':
+        return <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
+      case 'completed':
+        return <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+      case 'failed':
+        return <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+      default:
+        return null
+    }
+  }
+  
+  if (success || agreementStatus === 'completed') {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-          <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-4" />
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          {getStatusIcon()}
           <h2 className="text-2xl font-bold text-green-800 mb-2">Employee Created Successfully!</h2>
-          <p className="text-green-700 mb-4">Employee ID: <span className="font-mono text-sm">{employeeId}</span></p>
-          <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-4">
-            <p className="text-green-800 font-medium">✨ Agreement Generation Started</p>
-            <p className="text-green-700 text-sm">Employment agreement is being generated automatically. You'll see real-time updates in the employee list.</p>
-          </div>
+          <p className="text-green-700 mb-4">Employee ID: {employeeId}</p>
           <p className="text-green-600 mb-4">
-            Redirecting to employee list in 4 seconds...
+            Employment agreement has been generated automatically using our Edge Function.
           </p>
-          <button
-            onClick={onSuccess}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Go to Employee List Now
-          </button>
+          <p className="text-green-600">
+            Redirecting to employee list in 3 seconds...
+          </p>
+        </div>
+      </div>
+    )
+  }
+  
+  if (submitting) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          {getStatusIcon()}
+          <h2 className="text-2xl font-bold text-blue-800 mb-2">{getStatusMessage()}</h2>
+          <p className="text-blue-700">
+            Please wait while we process your request...
+          </p>
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -167,24 +191,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Add New Employee</h1>
-        <p className="text-gray-600 text-center mb-8">Fill in the details below to create a new employee and automatically generate their employment agreement.</p>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Add New Employee</h1>
         
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-            <span className="text-red-700">{error}</span>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Personal Information */}
-          <div className="bg-blue-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-4 flex items-center space-x-2">
-              <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
-              <span>Personal Information</span>
-            </h3>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information Section */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-4">Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
@@ -195,7 +208,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter first name"
                 />
               </div>
               <div>
@@ -207,7 +219,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter last name"
                 />
               </div>
               <div>
@@ -219,7 +230,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter email address"
                 />
               </div>
               <div>
@@ -230,7 +240,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.fathersName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter father's name"
                 />
               </div>
               <div>
@@ -240,21 +249,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   name="age"
                   min="18"
                   max="100"
-                  value={formData.age || ''}
+                  value={formData.age}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter age"
                 />
               </div>
             </div>
           </div>
           
-          {/* Employment Details */}
-          <div className="bg-green-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-green-900 mb-4 flex items-center space-x-2">
-              <span className="bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
-              <span>Employment Details</span>
-            </h3>
+          {/* Employment Details Section */}
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-900 mb-4">Employment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
@@ -265,7 +270,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.jobTitle}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="e.g., Software Engineer, Data Analyst"
                 />
               </div>
               <div>
@@ -275,10 +279,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   name="annualGrossSalary"
                   required
                   min="0"
-                  value={formData.annualGrossSalary || ''}
+                  value={formData.annualGrossSalary}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="e.g., 1200000"
                 />
               </div>
               <div>
@@ -300,7 +303,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.clientName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Enter client company name"
                 />
               </div>
               <div>
@@ -311,31 +313,26 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.managerDetails}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Enter manager name and details"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Work Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Place</label>
                 <input
                   type="text"
                   name="place"
                   value={formData.place}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="e.g., Mumbai, Remote, Hybrid"
                 />
               </div>
             </div>
           </div>
           
-          {/* Address Information */}
-          <div className="bg-purple-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-purple-900 mb-4 flex items-center space-x-2">
-              <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span>
-              <span>Address Information</span>
-            </h3>
+          {/* Address Information Section */}
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-purple-900 mb-4">Address Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
                 <input
                   type="text"
@@ -343,7 +340,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.addressLine1}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter street address"
                 />
               </div>
               <div>
@@ -354,7 +350,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.city}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter city"
                 />
               </div>
               <div>
@@ -365,7 +360,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.state}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter state"
                 />
               </div>
               <div>
@@ -376,38 +370,25 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.pincode}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter pincode"
                 />
               </div>
             </div>
           </div>
           
-          {/* Submit Button */}
-          <div className="flex space-x-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Creating Employee...</span>
-                </>
-              ) : (
-                <span>Create Employee & Generate Agreement</span>
-              )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={resetForm}
-              disabled={submitting}
-              className="bg-gray-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Reset Form
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <span>Create Employee & Generate Agreement</span>
+            )}
+          </button>
         </form>
       </div>
     </div>

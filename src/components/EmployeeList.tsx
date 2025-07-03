@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Eye, Download, FileText, Calendar, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 import EmployeeDetailModal from './EmployeeDetailModal'
+import ManualTriggerButton from './ManualTriggerButton'
 
 interface Employee {
   id: string
@@ -227,22 +228,32 @@ const EmployeeList: React.FC = () => {
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="mt-6 flex space-x-2">
-                  <button
-                    onClick={() => setSelectedEmployee(employee)}
-                    className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View Details</span>
-                  </button>
-                  
-                  {employee.agreement_status === 'completed' && employee.pdf_download_url && (
+                <div className="mt-6 space-y-3">
+                  <div className="flex space-x-2">
                     <button
-                      onClick={() => window.open(employee.pdf_download_url, '_blank')}
-                      className="bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+                      onClick={() => setSelectedEmployee(employee)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
                     >
-                      <Download className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
+                      <span>View Details</span>
                     </button>
+                    
+                    {employee.agreement_status === 'completed' && employee.pdf_download_url && (
+                      <button
+                        onClick={() => window.open(employee.pdf_download_url, '_blank')}
+                        className="bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Manual trigger for testing Edge Function */}
+                  {(employee.agreement_status === 'pending' || employee.agreement_status === 'failed') && (
+                    <ManualTriggerButton 
+                      employeeId={employee.id} 
+                      onSuccess={() => fetchEmployees()}
+                    />
                   )}
                 </div>
                 
