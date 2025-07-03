@@ -6,16 +6,21 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://kzejmozxbhzkrbfmwmnx.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6ZWptb3p4Ymh6a3JiZm13bW54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1Mzc3MzMsImV4cCI6MjA2NzExMzczM30.dvMHh8cLAeYRbalHsA8x1QUI36nWP-xgkws11vnrKdI";
 
+console.log('Supabase client initialization - URL:', SUPABASE_URL);
+console.log('Supabase client initialization - Key exists:', !!SUPABASE_PUBLISHABLE_KEY);
+
 // Validate required configuration
-if (!SUPABASE_URL) {
+if (!SUPABASE_URL || SUPABASE_URL === 'undefined') {
+  console.error('SUPABASE_URL is missing or undefined:', SUPABASE_URL);
   throw new Error('Missing Supabase URL. Please check your configuration.');
 }
 
-if (!SUPABASE_PUBLISHABLE_KEY) {
+if (!SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY === 'undefined') {
+  console.error('SUPABASE_PUBLISHABLE_KEY is missing or undefined:', SUPABASE_PUBLISHABLE_KEY);
   throw new Error('Missing Supabase publishable key. Please check your configuration.');
 }
 
-console.log('Initializing Supabase client with URL:', SUPABASE_URL);
+console.log('Creating Supabase client with URL:', SUPABASE_URL);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -28,4 +33,4 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-console.log('Supabase client initialized successfully');
+console.log('Supabase client created successfully');
