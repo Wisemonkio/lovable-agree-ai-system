@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/integrations/supabase/client'
 import { Eye, Download, FileText, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
 import EmployeeDetailModal from './EmployeeDetailModal'
 import ManualTriggerButton from './ManualTriggerButton'
@@ -49,12 +49,8 @@ const EmployeeList: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()
   
-  const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  )
-  
   useEffect(() => {
+    console.log('EmployeeList: Using centralized Supabase client')
     fetchEmployees()
     
     // Set up real-time subscription
@@ -77,12 +73,14 @@ const EmployeeList: React.FC = () => {
   
   const fetchEmployees = async () => {
     try {
+      console.log('EmployeeList: Fetching employees with centralized client')
       const { data, error } = await supabase
         .from('employee_details')
         .select('*')
         .order('created_at', { ascending: false })
       
       if (error) throw error
+      console.log('EmployeeList: Successfully fetched employees:', data?.length)
       setEmployees(data || [])
     } catch (error) {
       console.error('Error fetching employees:', error)
