@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -91,44 +92,29 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   }
   console.log('PDF validation passed');
 
-  // Create text fields for employee ID
-  const createTextFields = (documentId: string) => {
-    return [
-      {
-        document_id: documentId,
-        field_name: `Employee_ID_Field`,
-        field_type_name: "Textfield",
-        field_label: "Employee ID",
-        field_category: "Textfield",
-        default_value: employee.id,
-        abs_width: "200",
-        abs_height: "18",
-        is_mandatory: true,
-        x_coord: "30",
-        y_coord: "700",
-        page_no: 13
-      }
-    ];
-  };
-
-  // Prepare actions for signing with text fields
+  // Prepare actions for signing
   const actions = [
+    {
+      action_type: "SIGN",
+      recipient_email: "mithun@wisemonk.io",
+      recipient_name: "Mithun V",
+      signing_order: 1,
+      private_notes: "",
+      verify_recipient: false
+    },
     {
       action_type: "SIGN",
       recipient_email: employee.email,
       recipient_name: `${employee.first_name} ${employee.last_name}`.trim(),
-      signing_order: 1,
+      signing_order: 2,
       private_notes: "",
-      verify_recipient: false,
-      fields: {
-        text_fields: [] // Will be populated after document creation
-      }
+      verify_recipient: false
     },
     {
       action_type: "SIGN", 
       recipient_email: clientEmail,
       recipient_name: clientName,
-      signing_order: 2,
+      signing_order: 3,
       private_notes: "",
       verify_recipient: false
     }
@@ -222,55 +208,74 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   console.log(`Extracted Request ID: ${requestId}`);
   console.log(`Extracted Document ID: ${documentId}`);
 
-  // Now add text fields to the employee's signing action
-  console.log('Adding text fields with employee ID to the signing request...');
-  
-  const textFields = createTextFields(documentId);
-  console.log('Text fields created:', {
-    field_count: textFields.length,
-    employee_id: employee.id,
-    field_position: { x: 30, y: 700, page: 13 }
-  });
-
-  // Update the signing request with text fields
-  const updatePayload = {
-    requests: {
-      actions: [
-        {
-          action_type: "SIGN",
-          recipient_email: employee.email,
-          recipient_name: `${employee.first_name} ${employee.last_name}`.trim(),
-          signing_order: 1,
-          fields: {
-            text_fields: textFields
-          }
-        }
-      ]
-    }
-  };
-
-  console.log('Updating signing request with text fields...');
-  
-  const updateResponse = await fetch(`https://sign.zoho.in/api/v1/requests/${requestId}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': 'Zoho-oauthtoken ' + accessToken,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(updatePayload)
-  });
-
-  console.log(`Update request response status: ${updateResponse.status}`);
-
-  if (updateResponse.status !== 200) {
-    const updateResponseText = await updateResponse.text();
-    console.warn(`Failed to update with text fields: ${updateResponseText}`);
-    // Continue execution even if text field update fails
-  } else {
-    console.log('✅ Successfully added text fields with employee ID');
-  }
-
   return { requestId, documentId, domain: 'zoho.in' };
+};
+
+/**
+ * Submit document for signature with text fields
+ */
+const submitDocumentForSignature = async (accessToken: string, requestId: string, documentId: string, employeeId: string) => {
+  try {
+    console.log(`Submitting request ${requestId} for signature with employee ID: ${employeeId}`);
+    
+    // Create text fields for the document
+    const textFields = [
+      {
+        document_id: documentId,
+        field_name: `TextField_Employee_${employeeId}`,
+        field_type_name: "Textfield",
+        field_label: `Employee ID`,
+        field_category: "Textfield",
+        default_value: employeeId,
+        abs_width: "200",
+        abs_height: "18",
+        is_mandatory: true,
+        x_coord: "30",
+        y_coord: "700",
+        page_no: 13
+      }
+    ];
+    
+    const payload = {
+      requests: {
+        actions: [
+          {
+            action_type: "SIGN",
+            recipient_name: "Deepika",
+            recipient_email: "deepika@wisemonk.co",
+            signing_order: -1,
+            fields: {
+              text_fields: textFields
+            }
+          }
+        ]
+      }
+    };
+    
+    const response = await fetch(`https://sign.zoho.in/api/v1/requests/${requestId}/submit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Zoho-oauthtoken ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    console.log(`Submit request response status: ${response.status}`);
+    
+    if (response.status !== 200) {
+      const responseText = await response.text();
+      throw new Error(`Failed to submit request: ${responseText}`);
+    }
+    
+    const submitResponse = await response.json();
+    console.log('Document submitted for signature successfully');
+    
+    return submitResponse;
+  } catch (error) {
+    console.error(`Error submitting document for signature: ${error.message}`);
+    throw error;
+  }
 };
 
 serve(async (req) => {
@@ -418,6 +423,14 @@ serve(async (req) => {
       finalClientName, 
       finalClientEmail
     );
+
+    console.log('Zoho Sign request created, now submitting for signature...');
+    
+    // Wait a moment for the document to be processed
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Submit document for signature with text fields
+    await submitDocumentForSignature(accessToken, requestId, documentId, employeeId);
 
     // Update employee record with Zoho details
     console.log('Updating employee record with Zoho details...');
