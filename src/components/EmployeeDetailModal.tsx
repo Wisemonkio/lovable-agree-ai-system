@@ -8,6 +8,7 @@ interface Employee {
   last_name: string
   email: string
   job_title: string
+  job_description?: string
   annual_gross_salary: number
   monthly_gross: number
   annual_basic: number
@@ -20,21 +21,27 @@ interface Employee {
   monthly_special_allowance: number
   yfbp: number
   mfbp: number
+  bonus?: number
   agreement_status: string
   pdf_url?: string
   doc_url?: string
   pdf_download_url?: string
   joining_date: string
+  last_date?: string
   created_at: string
   client_name?: string
+  client_email?: string
   manager_details?: string
   fathers_name?: string
   age?: number
+  gender?: string
   address_line1?: string
+  address_line2?: string
   city?: string
   state?: string
   pincode?: string
   place?: string
+  aadhar?: string
   processing_started_at?: string
   processing_completed_at?: string
 }
@@ -143,6 +150,12 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
                 <label className="block text-sm font-medium text-gray-700">Email</label>
                 <p className="text-gray-900">{employee.email}</p>
               </div>
+              {employee.gender && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Gender</label>
+                  <p className="text-gray-900">{employee.gender === 'Son' ? 'Male' : employee.gender === 'Daughter' ? 'Female' : employee.gender}</p>
+                </div>
+              )}
               {employee.fathers_name && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Father's Name</label>
@@ -153,6 +166,12 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Age</label>
                   <p className="text-gray-900">{employee.age} years</p>
+                </div>
+              )}
+              {employee.aadhar && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Aadhar Number</label>
+                  <p className="text-gray-900">{employee.aadhar}</p>
                 </div>
               )}
             </div>
@@ -173,10 +192,22 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
                 <label className="block text-sm font-medium text-gray-700">Joining Date</label>
                 <p className="text-gray-900">{formatDate(employee.joining_date)}</p>
               </div>
+              {employee.last_date && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Date</label>
+                  <p className="text-gray-900">{formatDate(employee.last_date)}</p>
+                </div>
+              )}
               {employee.client_name && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Client Name</label>
+                  <label className="block text-sm font-medium text-gray-700">Company</label>
                   <p className="text-gray-900">{employee.client_name}</p>
+                </div>
+              )}
+              {employee.client_email && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Client Email</label>
+                  <p className="text-gray-900">{employee.client_email}</p>
                 </div>
               )}
               {employee.manager_details && (
@@ -191,11 +222,30 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
                   <p className="text-gray-900">{employee.place}</p>
                 </div>
               )}
+              {(employee.bonus && employee.bonus > 0) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Bonus</label>
+                  <p className="text-gray-900">{formatCurrency(employee.bonus)}</p>
+                </div>
+              )}
             </div>
+            
+            {/* Job Description */}
+            {employee.job_description && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div 
+                    className="text-gray-900 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: employee.job_description }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Address Information */}
-          {(employee.address_line1 || employee.city || employee.state || employee.pincode) && (
+          {(employee.address_line1 || employee.address_line2 || employee.city || employee.state || employee.pincode) && (
             <div className="bg-purple-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center space-x-2">
                 <MapPin className="w-5 h-5" />
@@ -204,8 +254,14 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {employee.address_line1 && (
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <label className="block text-sm font-medium text-gray-700">Address Line 1</label>
                     <p className="text-gray-900">{employee.address_line1}</p>
+                  </div>
+                )}
+                {employee.address_line2 && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Address Line 2</label>
+                    <p className="text-gray-900">{employee.address_line2}</p>
                   </div>
                 )}
                 {employee.city && (
