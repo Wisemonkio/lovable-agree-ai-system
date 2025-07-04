@@ -5,6 +5,7 @@ export interface Employee {
   last_name: string
   email: string
   job_title: string
+  job_description?: string
   annual_gross_salary: number
   monthly_gross: number
   annual_basic: number
@@ -18,11 +19,15 @@ export interface Employee {
   yfbp: number
   mfbp: number
   joining_date: string
+  last_date?: string
   client_name?: string
+  client_email?: string
   manager_details?: string
   fathers_name?: string
   age?: number
+  gender?: string
   address_line1?: string
+  address_line2?: string
   city?: string
   state?: string
   pincode?: string

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { generateEmployeeAgreement } from '../services/agreementService'
+import JobDescriptionEditor from './employee/JobDescriptionEditor'
 
 interface EmployeeFormProps {
   onSuccess: () => void
@@ -14,17 +15,20 @@ interface EmployeeFormData {
   lastName: string
   email: string
   jobTitle: string
+  jobDescription: string
   annualGrossSalary: number
   joiningDate: string
   clientName: string
+  clientEmail: string
   managerDetails: string
   fathersName: string
   age: number
+  gender: string
   addressLine1: string
+  addressLine2: string
   city: string
   state: string
   pincode: string
-  place: string
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
@@ -34,17 +38,20 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     lastName: '',
     email: '',
     jobTitle: '',
+    jobDescription: '',
     annualGrossSalary: 0,
     joiningDate: '',
     clientName: '',
+    clientEmail: '',
     managerDetails: '',
     fathersName: '',
     age: 0,
+    gender: '',
     addressLine1: '',
+    addressLine2: '',
     city: '',
     state: '',
-    pincode: '',
-    place: ''
+    pincode: ''
   })
   
   const [submitting, setSubmitting] = useState(false)
@@ -75,6 +82,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       mfbp: yfbp / 12
     }
   }
+
+  // Calculate last date (today + 5 days)
+  const calculateLastDate = () => {
+    const today = new Date()
+    const lastDate = new Date(today)
+    lastDate.setDate(today.getDate() + 5)
+    return lastDate.toISOString().split('T')[0]
+  }
+
+  // Transform gender selection
+  const transformGender = (gender: string) => {
+    return gender === 'Male' ? 'Son' : gender === 'Female' ? 'Daughter' : ''
+  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,6 +106,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     
     try {
       const salaryBreakdown = calculateSalaryBreakdown(formData.annualGrossSalary)
+      const lastDate = calculateLastDate()
+      const transformedGender = transformGender(formData.gender)
       
       // Step 1: Create employee record
       const { data: employee, error: createError } = await supabase
@@ -96,17 +118,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           last_name: formData.lastName,
           email: formData.email,
           job_title: formData.jobTitle,
+          job_description: formData.jobDescription,
           annual_gross_salary: formData.annualGrossSalary,
           joining_date: formData.joiningDate,
+          last_date: lastDate,
           client_name: formData.clientName,
+          client_email: formData.clientEmail,
           manager_details: formData.managerDetails,
           fathers_name: formData.fathersName,
           age: formData.age,
+          gender: transformedGender,
           address_line1: formData.addressLine1,
+          address_line2: formData.addressLine2,
           city: formData.city,
           state: formData.state,
           pincode: formData.pincode,
-          place: formData.place,
           ...salaryBreakdown
         })
         .select()
@@ -141,11 +167,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     }
   }
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
+    }))
+  }
+
+  const handleJobDescriptionChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      jobDescription: value
     }))
   }
   
@@ -259,6 +292,20 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
+                <select
+                  name="gender"
+                  required
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name</label>
                 <input
                   type="text"
@@ -322,7 +369,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Date (Auto-calculated)</label>
+                <input
+                  type="text"
+                  value={formData.joiningDate ? (() => {
+                    const joinDate = new Date(formData.joiningDate)
+                    const lastDate = new Date(joinDate)
+                    lastDate.setDate(joinDate.getDate() + 5)
+                    return lastDate.toLocaleDateString()
+                  })() : 'Select joining date first'}
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
                 <input
                   type="text"
                   name="clientName"
@@ -332,6 +393,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Email</label>
+                <input
+                  type="email"
+                  name="clientEmail"
+                  value={formData.clientEmail}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Manager Details</label>
                 <input
                   type="text"
@@ -341,17 +412,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Place</label>
-                <input
-                  type="text"
-                  name="place"
-                  value={formData.place}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
             </div>
+          </div>
+
+          {/* Job Description Section */}
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-yellow-900 mb-4">Job Description</h3>
+            <JobDescriptionEditor
+              value={formData.jobDescription}
+              onChange={handleJobDescriptionChange}
+              placeholder="Describe the role, responsibilities, requirements, and other relevant details for this position..."
+            />
           </div>
           
           {/* Address Information Section */}
@@ -364,6 +435,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   type="text"
                   name="addressLine1"
                   value={formData.addressLine1}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                <input
+                  type="text"
+                  name="addressLine2"
+                  value={formData.addressLine2}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />

@@ -12,6 +12,7 @@ export type Database = {
       employee_details: {
         Row: {
           address_line1: string | null
+          address_line2: string | null
           age: number | null
           agreement_status: string | null
           annual_basic: number
@@ -27,9 +28,12 @@ export type Database = {
           email: string
           fathers_name: string | null
           first_name: string
+          gender: string | null
           id: string
+          job_description: string | null
           job_title: string
           joining_date: string
+          last_date: string | null
           last_name: string
           manager_details: string | null
           mfbp: number
@@ -57,6 +61,7 @@ export type Database = {
         }
         Insert: {
           address_line1?: string | null
+          address_line2?: string | null
           age?: number | null
           agreement_status?: string | null
           annual_basic: number
@@ -72,9 +77,12 @@ export type Database = {
           email: string
           fathers_name?: string | null
           first_name: string
+          gender?: string | null
           id?: string
+          job_description?: string | null
           job_title: string
           joining_date: string
+          last_date?: string | null
           last_name: string
           manager_details?: string | null
           mfbp: number
@@ -102,6 +110,7 @@ export type Database = {
         }
         Update: {
           address_line1?: string | null
+          address_line2?: string | null
           age?: number | null
           agreement_status?: string | null
           annual_basic?: number
@@ -117,9 +126,12 @@ export type Database = {
           email?: string
           fathers_name?: string | null
           first_name?: string
+          gender?: string | null
           id?: string
+          job_description?: string | null
           job_title?: string
           joining_date?: string
+          last_date?: string | null
           last_name?: string
           manager_details?: string | null
           mfbp?: number

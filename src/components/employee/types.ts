@@ -29,10 +29,14 @@ export interface Employee {
   fathers_name?: string
   age?: number
   address_line1?: string
+  address_line2?: string
   city?: string
   state?: string
   pincode?: string
   place?: string
+  gender?: string
+  job_description?: string
+  last_date?: string
   processing_started_at?: string
   processing_completed_at?: string
   zoho_sign_request_id?: string
