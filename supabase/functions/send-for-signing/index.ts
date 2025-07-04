@@ -92,12 +92,12 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   }
   console.log('PDF validation passed');
 
-  // Prepare actions for signing
+  // Prepare actions for signing - Mithun (signer 1), Employee (signer 2), Client (viewer only)
   const actions = [
     {
       action_type: "SIGN",
       recipient_email: "mithun@wisemonk.io",
-      recipient_name: "Mithun V",
+      recipient_name: "Mithun",
       signing_order: 1,
       private_notes: "",
       verify_recipient: false
@@ -111,7 +111,7 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
       verify_recipient: false
     },
     {
-      action_type: "SIGN", 
+      action_type: "VIEW",
       recipient_email: clientEmail,
       recipient_name: clientName,
       signing_order: 3,
@@ -123,9 +123,9 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   // Prepare request data
   const requestData = {
     requests: {
-      request_name: `Employment Agreement - ${employee.first_name} ${employee.last_name}`,
+      request_name: `${employee.first_name} ${employee.last_name}_${clientName || 'Client'} - Employment Agreement`,
       actions: actions,
-      expiration_days: 10,
+      expiration_days: 5,
       is_sequential: true,
       email_reminders: true,
       reminder_period: 4
@@ -218,7 +218,7 @@ const submitDocumentForSignature = async (accessToken: string, requestId: string
   try {
     console.log(`Submitting request ${requestId} for signature with employee ID: ${employeeId}`);
     
-    // Create text fields for the document
+    // Create text fields for the document on page 13
     const textFields = [
       {
         document_id: documentId,
