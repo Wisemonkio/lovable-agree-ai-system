@@ -47,8 +47,6 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
           </div>
         </div>
         
-        <EmployeeStatusIndicator status={employee.agreement_status} />
-        
         <div className="flex items-center text-gray-500 text-sm space-x-4 mt-3">
           <div className="flex items-center space-x-1">
             <Mail className="w-4 h-4" />
@@ -123,6 +121,9 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
             </span>
           </div>
         )}
+
+        {/* Employee Status Indicator - positioned after signing status */}
+        <EmployeeStatusIndicator status={employee.agreement_status} />
       </div>
       
       {/* Actions */}
