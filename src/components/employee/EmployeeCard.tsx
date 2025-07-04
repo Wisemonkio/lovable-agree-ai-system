@@ -45,10 +45,11 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
             </h3>
             <p className="text-gray-600 text-sm">{employee.job_title}</p>
           </div>
-          <EmployeeStatusIndicator status={employee.agreement_status} />
         </div>
         
-        <div className="flex items-center text-gray-500 text-sm space-x-4">
+        <EmployeeStatusIndicator status={employee.agreement_status} />
+        
+        <div className="flex items-center text-gray-500 text-sm space-x-4 mt-3">
           <div className="flex items-center space-x-1">
             <Mail className="w-4 h-4" />
             <span className="truncate max-w-[200px]">{employee.email}</span>
