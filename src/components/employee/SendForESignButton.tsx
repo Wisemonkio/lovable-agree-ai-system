@@ -4,6 +4,7 @@ import { PenTool, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Employee } from './types'
 import { useToast } from '@/hooks/use-toast'
 import { sendForSigning } from '@/services/zohoSignService'
+import ClientInfoDialog from './ClientInfoDialog'
 
 interface SendForESignButtonProps {
   employee: Employee
@@ -12,13 +13,25 @@ interface SendForESignButtonProps {
 
 const SendForESignButton: React.FC<SendForESignButtonProps> = ({ employee, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [showClientDialog, setShowClientDialog] = useState(false)
   const { toast } = useToast()
 
-  const handleSendForSigning = async () => {
+  const handleSendForSigning = async (clientName?: string, clientEmail?: string) => {
+    // Check if we need client information
+    const needsClientInfo = !employee.client_name || !employee.client_email
+    
+    if (needsClientInfo && (!clientName || !clientEmail)) {
+      setShowClientDialog(true)
+      return
+    }
+
     setIsLoading(true)
     
     try {
-      const result = await sendForSigning(employee.id)
+      const result = await sendForSigning(employee.id, {
+        clientName: clientName || employee.client_name || '',
+        clientEmail: clientEmail || employee.client_email || ''
+      })
 
       if (result.success) {
         toast({
@@ -26,6 +39,7 @@ const SendForESignButton: React.FC<SendForESignButtonProps> = ({ employee, onSuc
           description: result.message || "Agreement sent for e-signature successfully!",
         })
 
+        setShowClientDialog(false)
         if (onSuccess) {
           onSuccess()
         }
@@ -115,13 +129,23 @@ const SendForESignButton: React.FC<SendForESignButtonProps> = ({ employee, onSuc
   }
 
   return (
-    <button
-      onClick={handleSendForSigning}
-      disabled={isDisabled()}
-      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle()}`}
-    >
-      {getButtonContent()}
-    </button>
+    <>
+      <button
+        onClick={() => handleSendForSigning()}
+        disabled={isDisabled()}
+        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle()}`}
+      >
+        {getButtonContent()}
+      </button>
+
+      <ClientInfoDialog
+        isOpen={showClientDialog}
+        onClose={() => setShowClientDialog(false)}
+        onSubmit={handleSendForSigning}
+        isLoading={isLoading}
+        employeeName={`${employee.first_name} ${employee.last_name}`}
+      />
+    </>
   )
 }
 

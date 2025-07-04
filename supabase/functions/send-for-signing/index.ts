@@ -80,7 +80,12 @@ const uploadDocumentToZoho = async (accessToken: string, pdfUrl: string, fileNam
   return data.document_id
 }
 
-const createSignRequest = async (accessToken: string, documentId: string, employee: any): Promise<string> => {
+const createSignRequest = async (accessToken: string, documentId: string, employee: any, clientName: string, clientEmail: string): Promise<string> => {
+  // Validate that we have client information
+  if (!clientName || !clientEmail) {
+    throw new Error('Client name and email are required for sending documents for signature')
+  }
+
   const signRequest: ZohoSignRequest = {
     request_name: `Employment Agreement - ${employee.first_name} ${employee.last_name}`,
     actions: [
@@ -89,6 +94,12 @@ const createSignRequest = async (accessToken: string, documentId: string, employ
         recipient_name: `${employee.first_name} ${employee.last_name}`,
         action_type: 'SIGN',
         signing_order: 1,
+      },
+      {
+        recipient_email: clientEmail,
+        recipient_name: clientName,
+        action_type: 'SIGN',
+        signing_order: 2,
       },
     ],
     document_ids: [documentId],
@@ -118,7 +129,7 @@ serve(async (req) => {
   }
 
   try {
-    const { employeeId } = await req.json()
+    const { employeeId, clientName, clientEmail } = await req.json()
 
     if (!employeeId) {
       return new Response(
@@ -154,6 +165,33 @@ serve(async (req) => {
       )
     }
 
+    // Determine client information - use provided values or fall back to employee record
+    const finalClientName = clientName || employee.client_name
+    const finalClientEmail = clientEmail || employee.client_email
+
+    // Validate that we have client information
+    if (!finalClientName || !finalClientEmail) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Client name and email are required for sending documents for signature',
+          details: 'Please provide client information to proceed with e-signature'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Update employee record with client information if provided
+    if (clientName || clientEmail) {
+      const updateData: any = {}
+      if (clientName) updateData.client_name = clientName
+      if (clientEmail) updateData.client_email = clientEmail
+      
+      await supabase
+        .from('employee_details')
+        .update(updateData)
+        .eq('id', employeeId)
+    }
+
     // Update status to indicate signing process has started
     await supabase
       .from('employee_details')
@@ -170,8 +208,8 @@ serve(async (req) => {
     const fileName = `employment_agreement_${employee.first_name}_${employee.last_name}.pdf`
     const documentId = await uploadDocumentToZoho(accessToken, employee.pdf_download_url, fileName)
 
-    // Create sign request
-    const requestId = await createSignRequest(accessToken, documentId, employee)
+    // Create sign request with both employee and client
+    const requestId = await createSignRequest(accessToken, documentId, employee, finalClientName, finalClientEmail)
 
     // Update employee record with Zoho details
     const { error: updateError } = await supabase
@@ -195,7 +233,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Document sent for signing successfully',
+        message: `Document sent for signing to ${employee.first_name} ${employee.last_name} and ${finalClientName}`,
         request_id: requestId 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

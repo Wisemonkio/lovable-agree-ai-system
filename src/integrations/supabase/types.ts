@@ -20,6 +20,7 @@ export type Database = {
           annual_lta: number
           annual_special_allowance: number
           city: string | null
+          client_email: string | null
           client_name: string | null
           created_at: string
           doc_url: string | null
@@ -64,6 +65,7 @@ export type Database = {
           annual_lta: number
           annual_special_allowance: number
           city?: string | null
+          client_email?: string | null
           client_name?: string | null
           created_at?: string
           doc_url?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           annual_lta?: number
           annual_special_allowance?: number
           city?: string | null
+          client_email?: string | null
           client_name?: string | null
           created_at?: string
           doc_url?: string | null

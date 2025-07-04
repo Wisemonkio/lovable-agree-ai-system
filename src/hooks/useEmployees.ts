@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -20,7 +19,14 @@ export const useEmployees = () => {
       
       if (error) throw error
       console.log('useEmployees: Successfully fetched employees:', data?.length)
-      setEmployees(data || [])
+      
+      // Transform the data to match our Employee interface
+      const transformedData = data?.map(employee => ({
+        ...employee,
+        zoho_sign_status: employee.zoho_sign_status as Employee['zoho_sign_status']
+      })) || []
+      
+      setEmployees(transformedData)
     } catch (error) {
       console.error('Error fetching employees:', error)
       toast({

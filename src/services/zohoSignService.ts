@@ -8,10 +8,22 @@ export interface SendForSigningResponse {
   error?: string
 }
 
-export const sendForSigning = async (employeeId: string): Promise<SendForSigningResponse> => {
+export interface ClientInfo {
+  clientName: string
+  clientEmail: string
+}
+
+export const sendForSigning = async (employeeId: string, clientInfo?: ClientInfo): Promise<SendForSigningResponse> => {
   try {
+    const requestBody: any = { employeeId }
+    
+    if (clientInfo) {
+      requestBody.clientName = clientInfo.clientName
+      requestBody.clientEmail = clientInfo.clientEmail
+    }
+
     const { data, error } = await supabase.functions.invoke('send-for-signing', {
-      body: { employeeId }
+      body: requestBody
     })
 
     if (error) {
