@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -92,7 +91,27 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   }
   console.log('PDF validation passed');
 
-  // Prepare actions for signing
+  // Create text fields for employee ID
+  const createTextFields = (documentId: string) => {
+    return [
+      {
+        document_id: documentId,
+        field_name: `Employee_ID_Field`,
+        field_type_name: "Textfield",
+        field_label: "Employee ID",
+        field_category: "Textfield",
+        default_value: employee.id,
+        abs_width: "200",
+        abs_height: "18",
+        is_mandatory: true,
+        x_coord: "30",
+        y_coord: "700",
+        page_no: 13
+      }
+    ];
+  };
+
+  // Prepare actions for signing with text fields
   const actions = [
     {
       action_type: "SIGN",
@@ -100,7 +119,10 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
       recipient_name: `${employee.first_name} ${employee.last_name}`.trim(),
       signing_order: 1,
       private_notes: "",
-      verify_recipient: false
+      verify_recipient: false,
+      fields: {
+        text_fields: [] // Will be populated after document creation
+      }
     },
     {
       action_type: "SIGN", 
@@ -127,7 +149,8 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   console.log('Request data prepared:', {
     request_name: requestData.requests.request_name,
     actions_count: requestData.requests.actions.length,
-    recipient_emails: requestData.requests.actions.map(a => a.recipient_email)
+    recipient_emails: requestData.requests.actions.map(a => a.recipient_email),
+    employee_id_for_text_field: employee.id
   });
 
   // Create multipart form data manually
@@ -192,12 +215,60 @@ const createZohoSignRequest = async (accessToken: string, pdfUrl: string, fileNa
   // Parse the response
   const createResponse = await response.json();
 
-  // Extract and log request ID
+  // Extract and log request ID and document ID
   const requestId = createResponse.requests.request_id;
   const documentId = createResponse.requests.document_ids[0].document_id;
 
   console.log(`Extracted Request ID: ${requestId}`);
   console.log(`Extracted Document ID: ${documentId}`);
+
+  // Now add text fields to the employee's signing action
+  console.log('Adding text fields with employee ID to the signing request...');
+  
+  const textFields = createTextFields(documentId);
+  console.log('Text fields created:', {
+    field_count: textFields.length,
+    employee_id: employee.id,
+    field_position: { x: 30, y: 700, page: 13 }
+  });
+
+  // Update the signing request with text fields
+  const updatePayload = {
+    requests: {
+      actions: [
+        {
+          action_type: "SIGN",
+          recipient_email: employee.email,
+          recipient_name: `${employee.first_name} ${employee.last_name}`.trim(),
+          signing_order: 1,
+          fields: {
+            text_fields: textFields
+          }
+        }
+      ]
+    }
+  };
+
+  console.log('Updating signing request with text fields...');
+  
+  const updateResponse = await fetch(`https://sign.zoho.in/api/v1/requests/${requestId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'Zoho-oauthtoken ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(updatePayload)
+  });
+
+  console.log(`Update request response status: ${updateResponse.status}`);
+
+  if (updateResponse.status !== 200) {
+    const updateResponseText = await updateResponse.text();
+    console.warn(`Failed to update with text fields: ${updateResponseText}`);
+    // Continue execution even if text field update fails
+  } else {
+    console.log('✅ Successfully added text fields with employee ID');
+  }
 
   return { requestId, documentId, domain: 'zoho.in' };
 };
@@ -268,6 +339,7 @@ serve(async (req) => {
     }
 
     console.log('Employee found:', {
+      id: employee.id,
       name: `${employee.first_name} ${employee.last_name}`,
       email: employee.email,
       has_pdf_url: !!employee.pdf_url,
