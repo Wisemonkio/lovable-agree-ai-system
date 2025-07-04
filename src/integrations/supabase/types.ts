@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      company_agreement_templates: {
+        Row: {
+          company_name: string
+          created_at: string
+          created_by: string
+          google_doc_id: string
+          google_doc_url: string
+          id: string
+          is_active: boolean
+          template_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          created_by?: string
+          google_doc_id: string
+          google_doc_url: string
+          id?: string
+          is_active?: boolean
+          template_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          created_by?: string
+          google_doc_id?: string
+          google_doc_url?: string
+          id?: string
+          is_active?: boolean
+          template_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_details: {
         Row: {
           aadhar: string | null
@@ -21,7 +57,7 @@ export type Database = {
           annual_hra: number
           annual_lta: number
           annual_special_allowance: number | null
-          bonus: number | null
+          bonus: string | null
           city: string | null
           client_email: string | null
           client_name: string | null
@@ -72,7 +108,7 @@ export type Database = {
           annual_hra: number
           annual_lta: number
           annual_special_allowance?: number | null
-          bonus?: number | null
+          bonus?: string | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null
@@ -123,7 +159,7 @@ export type Database = {
           annual_hra?: number
           annual_lta?: number
           annual_special_allowance?: number | null
-          bonus?: number | null
+          bonus?: string | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null

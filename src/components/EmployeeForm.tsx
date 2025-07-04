@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+
+import React, { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
-import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { CheckCircle, Loader2, AlertCircle, Upload, Eye, ExternalLink } from 'lucide-react'
 import { generateEmployeeAgreement } from '../services/agreementService'
 import JobDescriptionEditor from './employee/JobDescriptionEditor'
 import AgreementTemplateViewer from './employee/AgreementTemplateViewer'
@@ -31,6 +32,15 @@ interface EmployeeFormData {
   state: string
   pincode: string
   aadhar: string
+}
+
+interface CompanyTemplate {
+  id: string
+  company_name: string
+  google_doc_url: string
+  google_doc_id: string
+  template_name: string | null
+  created_at: string
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
@@ -64,6 +74,101 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null)
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [agreementStatus, setAgreementStatus] = useState<'creating' | 'generating' | 'completed' | 'failed' | null>(null)
+  
+  // Company template state
+  const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([])
+  const [selectedTemplate, setSelectedTemplate] = useState<CompanyTemplate | null>(null)
+  const [templateUrl, setTemplateUrl] = useState('')
+  const [templateName, setTemplateName] = useState('')
+  const [isUploadingTemplate, setIsUploadingTemplate] = useState(false)
+  const [showTemplateForm, setShowTemplateForm] = useState(false)
+  
+  // Load company templates on component mount
+  useEffect(() => {
+    loadCompanyTemplates()
+  }, [])
+  
+  // Check for existing template when company name changes
+  useEffect(() => {
+    if (formData.clientName) {
+      const existingTemplate = companyTemplates.find(
+        template => template.company_name.toLowerCase() === formData.clientName.toLowerCase()
+      )
+      setSelectedTemplate(existingTemplate || null)
+      setShowTemplateForm(!existingTemplate)
+    } else {
+      setSelectedTemplate(null)
+      setShowTemplateForm(false)
+    }
+  }, [formData.clientName, companyTemplates])
+  
+  const loadCompanyTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_agreement_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setCompanyTemplates(data || [])
+    } catch (error) {
+      console.error('Error loading company templates:', error)
+    }
+  }
+  
+  const extractGoogleDocId = (url: string): string | null => {
+    const match = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)
+    return match ? match[1] : null
+  }
+  
+  const validateGoogleDocUrl = (url: string): boolean => {
+    return url.includes('docs.google.com/document/d/') && extractGoogleDocId(url) !== null
+  }
+  
+  const handleTemplateUpload = async () => {
+    if (!templateUrl || !formData.clientName) return
+    
+    if (!validateGoogleDocUrl(templateUrl)) {
+      setError('Please enter a valid Google Docs URL')
+      return
+    }
+    
+    setIsUploadingTemplate(true)
+    setError(null)
+    
+    try {
+      const docId = extractGoogleDocId(templateUrl)
+      if (!docId) throw new Error('Could not extract document ID from URL')
+      
+      const { data, error } = await supabase
+        .from('company_agreement_templates')
+        .upsert({
+          company_name: formData.clientName,
+          google_doc_url: templateUrl,
+          google_doc_id: docId,
+          template_name: templateName || formData.clientName + ' Agreement Template',
+          is_active: true
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      // Reload templates and update selected template
+      await loadCompanyTemplates()
+      setSelectedTemplate(data)
+      setShowTemplateForm(false)
+      setTemplateUrl('')
+      setTemplateName('')
+      
+    } catch (error) {
+      console.error('Error uploading template:', error)
+      setError(error instanceof Error ? error.message : 'Failed to upload template')
+    } finally {
+      setIsUploadingTemplate(false)
+    }
+  }
   
   // Calculate salary breakdown
   const calculateSalaryBreakdown = (annualGross: number) => {
@@ -420,7 +525,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company *
+                  {selectedTemplate && (
+                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Custom Template
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   name="clientName"
@@ -428,7 +541,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.clientName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  list="company-templates"
                 />
+                <datalist id="company-templates">
+                  {companyTemplates.map(template => (
+                    <option key={template.id} value={template.company_name} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Client Email *</label>
@@ -454,6 +573,105 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
+          {/* Agreement Template Section */}
+          {formData.clientName && (
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-orange-900 mb-4">Agreement Template</h3>
+              
+              {selectedTemplate ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{selectedTemplate.template_name || 'Custom Template'}</h4>
+                      <p className="text-sm text-gray-600">Company: {selectedTemplate.company_name}</p>
+                      <p className="text-xs text-gray-500">Created: {new Date(selectedTemplate.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={selectedTemplate.google_doc_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Preview
+                      </a>
+                      <a
+                        href={selectedTemplate.google_doc_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Open
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : showTemplateForm && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-yellow-100 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      No custom template found for <strong>{formData.clientName}</strong>. 
+                      You can upload a Google Docs template or use the default template.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Google Docs Template URL *
+                      </label>
+                      <input
+                        type="url"
+                        value={templateUrl}
+                        onChange={(e) => setTemplateUrl(e.target.value)}
+                        placeholder="https://docs.google.com/document/d/..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Make sure the document is publicly viewable or shared with appropriate permissions
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Template Name (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder={`${formData.clientName} Agreement Template`}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={handleTemplateUpload}
+                      disabled={!templateUrl || isUploadingTemplate}
+                      className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isUploadingTemplate ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      {isUploadingTemplate ? 'Uploading...' : 'Upload Template'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {!selectedTemplate && !showTemplateForm && (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-2">Enter a company name to manage templates</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Job Description Section */}
           <div className="bg-yellow-50 p-4 rounded-lg">
             <h3 className="font-semibold text-yellow-900 mb-4">Job Description</h3>
@@ -461,7 +679,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
               value={formData.jobDescription}
               onChange={handleJobDescriptionChange}
               placeholder="Describe the role, responsibilities, requirements, and other relevant details for this position..."
-              required
             />
           </div>
           
@@ -526,6 +743,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
               </div>
             </div>
           </div>
+          
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
           
           <button
             type="submit"

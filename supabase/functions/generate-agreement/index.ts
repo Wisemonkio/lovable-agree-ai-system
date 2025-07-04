@@ -1,9 +1,9 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import type { Employee, AgreementGenerationResponse } from './types.ts'
-import { replacePlaceholdersInDoc, exportDocAsPDF, createDocumentCopy, deleteDocument, fetchGoogleDocsContent, replacePlaceholders } from './template.ts'
-import { generatePDF } from './pdf-generator.ts'
-import { updateEmployeeStatus, fetchEmployee, uploadPDF, createGeneratedAgreementRecord } from './database.ts'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { Employee } from './types.ts'
+import { fetchEmployee, updateEmployeeStatus, uploadPDF, createGeneratedAgreementRecord } from './database.ts'
+import { generateAgreementPDF } from './pdf-generator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,149 +15,124 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now()
+  
   try {
-    console.log('=== Edge Function Started ===')
-
-    const { employee_id } = await req.json()
-
-    if (!employee_id) {
-      throw new Error('Employee ID is required')
+    const { employeeId } = await req.json()
+    
+    if (!employeeId) {
+      return new Response(
+        JSON.stringify({ error: 'Employee ID is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    console.log('Processing employee:', employee_id)
-
+    console.log(`Starting agreement generation for employee: ${employeeId}`)
+    
     // Update status to processing
-    console.log('Updating status to processing...')
-    await updateEmployeeStatus(employee_id, 'processing', {
+    await updateEmployeeStatus(employeeId, 'processing', {
       processing_started_at: new Date().toISOString()
     })
 
-    // Fetch employee details
-    console.log('Fetching employee details...')
-    const employee = await fetchEmployee(employee_id)
-    console.log('Employee fetched successfully:', employee.first_name, employee.last_name)
+    // Fetch employee data
+    const employee = await fetchEmployee(employeeId)
+    console.log(`Employee fetched: ${employee.first_name} ${employee.last_name}`)
 
-    let pdfBuffer: Uint8Array
-    let fileName = `employment_agreement_${employee.first_name}_${employee.last_name}_${Date.now()}.pdf`
-
-    try {
-      // Try Google Docs API approach first
-      console.log('Attempting Google Docs API approach...')
+    // Check for company-specific template
+    let templateDocId = Deno.env.get('DEFAULT_GOOGLE_DOC_ID')
+    
+    if (employee.client_name) {
+      console.log(`Checking for custom template for company: ${employee.client_name}`)
       
-      // Create a copy of the template document
-      console.log('Creating copy of template document...')
-      const templateDocId = '1CpMQCfZn4ePyNr_2bYfr2IgCTZMeAJ_Og3vDwmR--zc'
-      const copyTitle = `Employment_Agreement_${employee.first_name}_${employee.last_name}_${Date.now()}`
-      const copyDocId = await createDocumentCopy(templateDocId, copyTitle)
-      console.log('Document copy created with ID:', copyDocId)
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      )
       
-      // Replace placeholders in the copied document
-      console.log('Replacing placeholders in document...')
-      await replacePlaceholdersInDoc(copyDocId, employee)
+      const { data: companyTemplate, error: templateError } = await supabase
+        .from('company_agreement_templates')
+        .select('google_doc_id, google_doc_url, template_name')
+        .eq('company_name', employee.client_name)
+        .eq('is_active', true)
+        .single()
       
-      // Export the document as PDF
-      console.log('Exporting document as PDF...')
-      pdfBuffer = await exportDocAsPDF(copyDocId)
-      
-      // Clean up - delete the temporary document copy
-      console.log('Cleaning up temporary document...')
-      try {
-        await deleteDocument(copyDocId)
-        console.log('Temporary document deleted successfully')
-      } catch (deleteError) {
-        console.warn('Failed to delete temporary document:', deleteError)
-        // Continue execution even if cleanup fails
+      if (!templateError && companyTemplate) {
+        templateDocId = companyTemplate.google_doc_id
+        console.log(`Using custom template for ${employee.client_name}: ${companyTemplate.template_name}`)
+      } else {
+        console.log(`No custom template found for ${employee.client_name}, using default template`)
       }
-      
-      console.log('Google Docs API approach successful!')
-      
-    } catch (googleError) {
-      console.warn('Google Docs API approach failed, falling back to text-based approach:', googleError)
-      
-      // Fallback to existing text-based approach
-      console.log('Fetching Google Docs template content...')
-      const docId = '1CpMQCfZn4ePyNr_2bYfr2IgCTZMeAJ_Og3vDwmR--zc'
-      const templateContent = await fetchGoogleDocsContent(docId)
-      
-      // Replace placeholders with employee data
-      console.log('Processing template with employee data...')
-      const processedContent = replacePlaceholders(templateContent, employee)
-
-      // Generate PDF using existing PDF generator
-      console.log('Generating PDF using fallback method...')
-      pdfBuffer = generatePDF(processedContent, employee)
     }
 
-    console.log('PDF generated, uploading to storage...')
-    console.log('File name:', fileName)
-    console.log('Buffer size:', pdfBuffer.byteLength)
+    if (!templateDocId) {
+      throw new Error('No template document ID available (neither custom nor default)')
+    }
 
-    // Upload to Supabase Storage
+    // Generate the PDF
+    console.log(`Generating PDF with template: ${templateDocId}`)
+    const pdfBuffer = await generateAgreementPDF(employee, templateDocId)
+    
+    // Upload to storage
+    const fileName = `agreement_${employee.first_name}_${employee.last_name}_${employeeId}.pdf`
     const { publicUrl } = await uploadPDF(fileName, pdfBuffer)
-    console.log('Upload successful, public URL:', publicUrl)
-
-    // Update employee record with URLs
-    console.log('Updating employee record with URLs...')
-    await updateEmployeeStatus(employee_id, 'completed', {
-      pdf_url: publicUrl,
+    
+    // Update employee with PDF URL and completion status
+    const processingTime = Math.round((Date.now() - startTime) / 1000)
+    
+    await updateEmployeeStatus(employeeId, 'completed', {
       pdf_download_url: publicUrl,
       processing_completed_at: new Date().toISOString()
     })
-
-    // Create generated_agreements record
-    console.log('Creating generated_agreements record...')
-    const processingStartTime = employee.processing_started_at ? new Date(employee.processing_started_at).getTime() : Date.now()
-    const processingTime = Math.floor((Date.now() - processingStartTime) / 1000)
     
-    await createGeneratedAgreementRecord(employee_id, fileName, publicUrl, processingTime, employee)
-
-    console.log('=== Agreement generated successfully ===')
-
+    // Create generated agreement record
+    await createGeneratedAgreementRecord(employeeId, fileName, publicUrl, processingTime, employee)
+    
+    console.log(`Agreement generated successfully in ${processingTime}s`)
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        employee_id: employee_id,
-        document_urls: {
-          pdf_url: publicUrl,
-          pdf_download_url: publicUrl,
-          doc_url: publicUrl
-        },
-        message: 'Employment agreement generated successfully using Google Docs template'
-      } as AgreementGenerationResponse),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      JSON.stringify({ 
+        success: true, 
+        pdfUrl: publicUrl,
+        processingTime 
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
 
   } catch (error) {
-    console.error('=== Edge Function Error ===')
-    console.error('Error details:', error)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    console.error('Error generating agreement:', error)
     
-    // Try to update employee status to failed
+    // Try to update employee status to failed if we have the employeeId
     try {
-      const { employee_id } = await req.json()
-      if (employee_id) {
-        await updateEmployeeStatus(employee_id, 'failed', {
-          error_message: error.message,
+      const body = await req.clone().json()
+      if (body.employeeId) {
+        await updateEmployeeStatus(body.employeeId, 'failed', {
           processing_completed_at: new Date().toISOString()
         })
       }
-    } catch (statusUpdateError) {
-      console.error('Failed to update employee status:', statusUpdateError)
+    } catch (updateError) {
+      console.error('Failed to update employee status:', updateError)
     }
     
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to generate agreement',
-        details: error.stack || 'No stack trace available'
-      } as AgreementGenerationResponse),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+      JSON.stringify({ 
+        error: error.message || 'Unknown error occurred',
+        success: false 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
   }
