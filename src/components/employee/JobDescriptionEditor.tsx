@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react'
 import { Bold, Italic, List, ListOrdered, Link, Type } from 'lucide-react'
 
@@ -237,7 +238,7 @@ const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
           color: #9CA3AF;

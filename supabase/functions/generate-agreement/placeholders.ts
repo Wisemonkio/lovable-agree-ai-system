@@ -1,6 +1,7 @@
 
 import type { Employee } from './types.ts'
 import { formatCurrency, formatDate } from './formatters.ts'
+import { htmlToPlainText } from './html-utils.ts'
 
 export const createPlaceholders = (employee: Employee): Record<string, string> => {
   return {
@@ -26,7 +27,7 @@ export const createPlaceholders = (employee: Employee): Record<string, string> =
     '{{Joining Date}}': formatDate(employee.joining_date),
     '{{Agreement Date}}': formatDate(new Date().toISOString()),
     '{{Id}}': employee.id,
-    '{{Role details}}': employee.job_description || '',
+    '{{Role details}}': employee.job_description ? htmlToPlainText(employee.job_description) : '',
     '{{Last Date}}': employee.last_date ? formatDate(employee.last_date) : '',
     '{{Address State}}': employee.state || '',
     '{{Pincode}}': employee.pincode || '',
