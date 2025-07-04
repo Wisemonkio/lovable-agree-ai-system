@@ -2,7 +2,6 @@ import type { Employee } from './types.ts'
 import { formatCurrency, formatDate, formatAddress, formatOptionalField } from './formatters.ts'
 import { getGoogleAccessToken } from './google-auth.ts'
 
-// Keep the existing Google Docs fallback function
 export const fetchGoogleDocsContent = async (docId: string): Promise<string> => {
   try {
     const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`
@@ -20,19 +19,25 @@ export const fetchGoogleDocsContent = async (docId: string): Promise<string> => 
   }
 }
 
-// Keep existing default template and placeholder replacement for fallback
 export const getDefaultTemplate = (): string => {
   return `EMPLOYMENT AGREEMENT
 
 This Employment Agreement ("Agreement") is entered into on {{Agreement Date}} between {{client Name}} ("Company") and {{Full Name}} ("Employee").
 
 EMPLOYEE INFORMATION:
-Name: {{Full Name}}{{Fathers name section}}{{Age section}}
-Email: {{email}}{{Address section}}
+Name: {{Full Name}}
+Father's Name: {{Fathers name}}
+Age: {{Age}}
+Email: {{email}}
+Address: {{Address Line 1}}, {{Address Line 2}}, {{Address City}}, {{Address State}} - {{Pincode}}
 
 EMPLOYMENT DETAILS:
 Position: {{Job role}}
-Joining Date: {{Joining Date}}{{Place section}}{{Client section}}{{Manager section}}
+Role Details: {{Role details}}
+Joining Date: {{Joining Date}}
+Last Date: {{Last Date}}
+Client: {{client Name}}
+Manager: {{Manager}}
 
 COMPENSATION:
 Annual Gross Salary: {{Annual_gross}}
@@ -61,20 +66,14 @@ SIGNATURES:
 Employee: _____________________ Date: _____________
 {{Full Name}}
 
-{{Company signature section}}`
+Company Representative: _____________________ Date: _____________
+{{client Name}}`
 }
 
 export const replacePlaceholders = (template: string, employee: Employee): string => {
-  const fathersName = formatOptionalField(employee.fathers_name)
-  const age = formatOptionalField(employee.age)
-  const address = formatAddress(employee.address_line1, employee.city, employee.state, employee.pincode)
-  const place = formatOptionalField(employee.place)
-  const clientName = formatOptionalField(employee.client_name)
-  const manager = formatOptionalField(employee.manager_details)
-
   const placeholders = {
-    '{{client Name}}': clientName || 'Company',
-    '{{Manager}}': manager,
+    '{{client Name}}': employee.client_name || 'Company',
+    '{{Manager}}': employee.manager_details || '',
     '{{First Name}}': employee.first_name,
     '{{last Name}}': employee.last_name,
     '{{Full Name}}': `${employee.first_name} ${employee.last_name}`,
@@ -95,17 +94,16 @@ export const replacePlaceholders = (template: string, employee: Employee): strin
     '{{Joining Date}}': formatDate(employee.joining_date),
     '{{Agreement Date}}': formatDate(new Date().toISOString()),
     '{{Id}}': employee.id,
-    
-    // Conditional sections - only show if data exists
-    '{{Fathers name section}}': fathersName ? `\nFather's Name: ${fathersName}` : '',
-    '{{Age section}}': age ? `\nAge: ${age}` : '',
-    '{{Address section}}': address ? `\nAddress: ${address}` : '',
-    '{{Place section}}': place ? `\nPlace of Work: ${place}` : '',
-    '{{Client section}}': clientName ? `\nClient: ${clientName}` : '',
-    '{{Manager section}}': manager ? `\nManager: ${manager}` : '',
-    '{{Company signature section}}': clientName ? 
-      `\nCompany Representative: _____________________ Date: _____________\n${clientName}` : 
-      '\nCompany Representative: _____________________ Date: _____________',
+    '{{Role details}}': employee.job_description || '',
+    '{{Last Date}}': employee.last_date ? formatDate(employee.last_date) : '',
+    '{{Address State}}': employee.state || '',
+    '{{Pincode}}': employee.pincode || '',
+    '{{Address City}}': employee.city || '',
+    '{{Address Line 2}}': employee.address_line2 || '',
+    '{{Address Line 1}}': employee.address_line1 || '',
+    '{{relation}}': employee.gender || '',
+    '{{Fathers name}}': employee.fathers_name || '',
+    '{{Age}}': employee.age ? employee.age.toString() : ''
   }
 
   let processedTemplate = template
@@ -125,20 +123,12 @@ export const replacePlaceholders = (template: string, employee: Employee): strin
   return processedTemplate
 }
 
-// New Google Docs API functions
 export async function replacePlaceholdersInDoc(docId: string, employee: Employee): Promise<void> {
   const accessToken = await getGoogleAccessToken();
   
-  const fathersName = formatOptionalField(employee.fathers_name)
-  const age = formatOptionalField(employee.age)
-  const address = formatAddress(employee.address_line1, employee.city, employee.state, employee.pincode)
-  const place = formatOptionalField(employee.place)
-  const clientName = formatOptionalField(employee.client_name)
-  const manager = formatOptionalField(employee.manager_details)
-
   const placeholders = {
-    '{{client Name}}': clientName || 'Company',
-    '{{Manager}}': manager,
+    '{{client Name}}': employee.client_name || 'Company',
+    '{{Manager}}': employee.manager_details || '',
     '{{First Name}}': employee.first_name,
     '{{last Name}}': employee.last_name,
     '{{Full Name}}': `${employee.first_name} ${employee.last_name}`,
@@ -159,17 +149,16 @@ export async function replacePlaceholdersInDoc(docId: string, employee: Employee
     '{{Joining Date}}': formatDate(employee.joining_date),
     '{{Agreement Date}}': formatDate(new Date().toISOString()),
     '{{Id}}': employee.id,
-    
-    // Conditional sections
-    '{{Fathers name section}}': fathersName ? `\nFather's Name: ${fathersName}` : '',
-    '{{Age section}}': age ? `\nAge: ${age}` : '',
-    '{{Address section}}': address ? `\nAddress: ${address}` : '',
-    '{{Place section}}': place ? `\nPlace of Work: ${place}` : '',
-    '{{Client section}}': clientName ? `\nClient: ${clientName}` : '',
-    '{{Manager section}}': manager ? `\nManager: ${manager}` : '',
-    '{{Company signature section}}': clientName ? 
-      `\nCompany Representative: _____________________ Date: _____________\n${clientName}` : 
-      '\nCompany Representative: _____________________ Date: _____________',
+    '{{Role details}}': employee.job_description || '',
+    '{{Last Date}}': employee.last_date ? formatDate(employee.last_date) : '',
+    '{{Address State}}': employee.state || '',
+    '{{Pincode}}': employee.pincode || '',
+    '{{Address City}}': employee.city || '',
+    '{{Address Line 2}}': employee.address_line2 || '',
+    '{{Address Line 1}}': employee.address_line1 || '',
+    '{{relation}}': employee.gender || '',
+    '{{Fathers name}}': employee.fathers_name || '',
+    '{{Age}}': employee.age ? employee.age.toString() : ''
   };
 
   console.log('Replacing placeholders in Google Doc:', Object.keys(placeholders).length, 'placeholders');
