@@ -118,7 +118,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
         .insert({
-          user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
           email: formData.email,
@@ -318,20 +317,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name *</label>
                 <input
                   type="text"
                   name="fathersName"
+                  required
                   value={formData.fathersName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Age *</label>
                 <input
                   type="number"
                   name="age"
+                  required
                   min="18"
                   max="100"
                   value={formData.age}
@@ -340,10 +341,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Number *</label>
                 <input
                   type="text"
                   name="aadhar"
+                  required
                   value={formData.aadhar}
                   onChange={handleInputChange}
                   placeholder="1234 5678 9012"
@@ -418,20 +420,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
                 <input
                   type="text"
                   name="clientName"
+                  required
                   value={formData.clientName}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Email *</label>
                 <input
                   type="email"
                   name="clientEmail"
+                  required
                   value={formData.clientEmail}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -457,6 +461,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
               value={formData.jobDescription}
               onChange={handleJobDescriptionChange}
               placeholder="Describe the role, responsibilities, requirements, and other relevant details for this position..."
+              required
             />
           </div>
           
@@ -465,50 +470,55 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
             <h3 className="font-semibold text-purple-900 mb-4">Address Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
                 <input
                   type="text"
                   name="addressLine1"
+                  required
                   value={formData.addressLine1}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2 *</label>
                 <input
                   type="text"
                   name="addressLine2"
+                  required
                   value={formData.addressLine2}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                 <input
                   type="text"
                   name="city"
+                  required
                   value={formData.city}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
                 <input
                   type="text"
                   name="state"
+                  required
                   value={formData.state}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pincode *</label>
                 <input
                   type="text"
                   name="pincode"
+                  required
                   value={formData.pincode}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
