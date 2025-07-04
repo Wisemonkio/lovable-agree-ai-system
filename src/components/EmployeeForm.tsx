@@ -17,7 +17,7 @@ interface EmployeeFormData {
   jobTitle: string
   jobDescription: string
   annualGrossSalary: number
-  bonus: number
+  bonus: string
   joiningDate: string
   clientName: string
   clientEmail: string
@@ -43,7 +43,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     jobTitle: '',
     jobDescription: '',
     annualGrossSalary: 0,
-    bonus: 0,
+    bonus: '',
     joiningDate: '',
     clientName: '',
     clientEmail: '',
@@ -382,15 +382,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bonus (₹)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Variable/Bonus (in words)</label>
                 <input
-                  type="number"
+                  type="text"
                   name="bonus"
-                  min="0"
                   value={formData.bonus}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Enter bonus amount"
+                  placeholder="e.g., Ten Thousand Rupees Only"
                 />
               </div>
               <div>
