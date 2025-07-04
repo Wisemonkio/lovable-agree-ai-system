@@ -1,4 +1,3 @@
-
 import type { Employee } from './types.ts'
 import { formatCurrency, formatDate } from './formatters.ts'
 import { htmlToPlainText } from './html-utils.ts'
@@ -37,7 +36,8 @@ export const createPlaceholders = (employee: Employee): Record<string, string> =
     '{{relation}}': employee.gender || '',
     '{{Fathers name}}': employee.fathers_name || '',
     '{{Age}}': employee.age ? employee.age.toString() : '',
-    '{{Aadhar}}': employee.aadhar || ''
+    '{{Aadhar}}': employee.aadhar || '',
+    '{{bonus}}': employee.bonus ? formatCurrency(employee.bonus) : formatCurrency(0)
   }
 }
 

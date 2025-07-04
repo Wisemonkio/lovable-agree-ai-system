@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,6 +16,7 @@ interface EmployeeFormData {
   jobTitle: string
   jobDescription: string
   annualGrossSalary: number
+  bonus: number
   joiningDate: string
   clientName: string
   clientEmail: string
@@ -41,6 +41,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     jobTitle: '',
     jobDescription: '',
     annualGrossSalary: 0,
+    bonus: 0,
     joiningDate: '',
     clientName: '',
     clientEmail: '',
@@ -122,6 +123,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           job_title: formData.jobTitle,
           job_description: formData.jobDescription,
           annual_gross_salary: formData.annualGrossSalary,
+          bonus: formData.bonus,
           joining_date: formData.joiningDate,
           last_date: lastDate,
           client_name: formData.clientName,
@@ -370,6 +372,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   value={formData.annualGrossSalary}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bonus (₹)</label>
+                <input
+                  type="number"
+                  name="bonus"
+                  min="0"
+                  value={formData.bonus}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Enter bonus amount"
                 />
               </div>
               <div>

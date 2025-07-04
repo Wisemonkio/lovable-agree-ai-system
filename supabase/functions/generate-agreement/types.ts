@@ -17,6 +17,7 @@ export interface Employee {
   monthly_special_allowance: number
   yfbp: number
   mfbp: number
+  bonus?: number
   joining_date: string
   last_date?: string
   client_name?: string

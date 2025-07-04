@@ -21,6 +21,7 @@ export type Database = {
           annual_hra: number
           annual_lta: number
           annual_special_allowance: number
+          bonus: number | null
           city: string | null
           client_email: string | null
           client_name: string | null
@@ -71,6 +72,7 @@ export type Database = {
           annual_hra: number
           annual_lta: number
           annual_special_allowance: number
+          bonus?: number | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           annual_hra?: number
           annual_lta?: number
           annual_special_allowance?: number
+          bonus?: number | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null
