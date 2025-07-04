@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       employee_details: {
         Row: {
+          aadhar: string | null
           address_line1: string | null
           address_line2: string | null
           age: number | null
@@ -60,6 +61,7 @@ export type Database = {
           zoho_sign_status: string | null
         }
         Insert: {
+          aadhar?: string | null
           address_line1?: string | null
           address_line2?: string | null
           age?: number | null
@@ -109,6 +111,7 @@ export type Database = {
           zoho_sign_status?: string | null
         }
         Update: {
+          aadhar?: string | null
           address_line1?: string | null
           address_line2?: string | null
           age?: number | null

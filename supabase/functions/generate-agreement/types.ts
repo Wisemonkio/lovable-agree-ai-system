@@ -1,4 +1,3 @@
-
 export interface Employee {
   id: string
   first_name: string
@@ -32,6 +31,7 @@ export interface Employee {
   state?: string
   pincode?: string
   place?: string
+  aadhar?: string
 }
 
 export interface AgreementGenerationResponse {

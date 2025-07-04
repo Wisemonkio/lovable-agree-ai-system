@@ -45,4 +45,5 @@ export interface Employee {
   signing_sent_at?: string
   signing_completed_at?: string
   zoho_sign_error?: string
+  aadhar?: string
 }

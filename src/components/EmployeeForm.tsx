@@ -29,6 +29,7 @@ interface EmployeeFormData {
   city: string
   state: string
   pincode: string
+  aadhar: string
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
@@ -51,7 +52,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     addressLine2: '',
     city: '',
     state: '',
-    pincode: ''
+    pincode: '',
+    aadhar: ''
   })
   
   const [submitting, setSubmitting] = useState(false)
@@ -133,6 +135,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           city: formData.city,
           state: formData.state,
           pincode: formData.pincode,
+          aadhar: formData.aadhar,
           ...salaryBreakdown
         })
         .select()
@@ -324,6 +327,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                   max="100"
                   value={formData.age}
                   onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Number</label>
+                <input
+                  type="text"
+                  name="aadhar"
+                  value={formData.aadhar}
+                  onChange={handleInputChange}
+                  placeholder="1234 5678 9012"
+                  maxLength={12}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

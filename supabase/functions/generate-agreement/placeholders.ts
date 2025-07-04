@@ -36,7 +36,8 @@ export const createPlaceholders = (employee: Employee): Record<string, string> =
     '{{Address Line 1}}': employee.address_line1 || '',
     '{{relation}}': employee.gender || '',
     '{{Fathers name}}': employee.fathers_name || '',
-    '{{Age}}': employee.age ? employee.age.toString() : ''
+    '{{Age}}': employee.age ? employee.age.toString() : '',
+    '{{Aadhar}}': employee.aadhar || ''
   }
 }
 
