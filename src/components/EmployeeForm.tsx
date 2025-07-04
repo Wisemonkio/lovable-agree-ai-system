@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { generateEmployeeAgreement } from '../services/agreementService'
 import JobDescriptionEditor from './employee/JobDescriptionEditor'
+import AgreementTemplateViewer from './employee/AgreementTemplateViewer'
 
 interface EmployeeFormProps {
   onSuccess: () => void
@@ -33,6 +34,7 @@ interface EmployeeFormData {
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
+  
   const { user } = useAuth()
   const [formData, setFormData] = useState<EmployeeFormData>({
     firstName: '',
@@ -257,6 +259,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Add New Employee</h1>
+        
+        {/* Agreement Template Section */}
+        <div className="mb-6">
+          <AgreementTemplateViewer formData={formData} />
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information Section */}
