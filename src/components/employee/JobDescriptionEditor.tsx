@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react'
 import { Bold, Italic, List, ListOrdered, Link, Type } from 'lucide-react'
 
@@ -15,7 +14,7 @@ const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null)
   const [isResizing, setIsResizing] = useState(false)
-  const [editorHeight, setEditorHeight] = useState(500)
+  const [editorHeight, setEditorHeight] = useState(250)
   const [activeFormats, setActiveFormats] = useState({
     bold: false,
     italic: false,
@@ -32,7 +31,7 @@ const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isResizing) {
-        const newHeight = Math.max(500, Math.min(800, e.clientY - editorRef.current!.getBoundingClientRect().top))
+        const newHeight = Math.max(250, Math.min(400, e.clientY - editorRef.current!.getBoundingClientRect().top))
         setEditorHeight(newHeight)
       }
     }
@@ -208,8 +207,8 @@ const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({
             onKeyDown={handleKeyDown}
             onMouseUp={handleSelectionChange}
             onKeyUp={handleSelectionChange}
-            className="w-full p-4 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset min-h-[500px] overflow-y-auto"
-            style={{ height: `${editorHeight}px`, maxHeight: '800px' }}
+            className="w-full p-4 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset min-h-[250px] overflow-y-auto"
+            style={{ height: `${editorHeight}px`, maxHeight: '400px' }}
             data-placeholder={placeholder}
             suppressContentEditableWarning={true}
           />
