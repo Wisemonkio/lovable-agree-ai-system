@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -23,7 +24,9 @@ export const useEmployees = () => {
       // Transform the data to match our Employee interface
       const transformedData = data?.map(employee => ({
         ...employee,
-        zoho_sign_status: employee.zoho_sign_status as Employee['zoho_sign_status']
+        zoho_sign_status: employee.zoho_sign_status as Employee['zoho_sign_status'],
+        // Ensure bonus is handled as string or undefined
+        bonus: employee.bonus || undefined
       })) || []
       
       setEmployees(transformedData)

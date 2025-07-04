@@ -17,7 +17,7 @@ export interface Employee {
   monthly_special_allowance: number
   yfbp: number
   mfbp: number
-  bonus?: number
+  bonus?: string
   agreement_status: string
   pdf_url?: string
   doc_url?: string
