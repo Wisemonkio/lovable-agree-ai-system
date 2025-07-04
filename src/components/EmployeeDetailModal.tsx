@@ -1,50 +1,7 @@
 
 import React from 'react'
 import { X, Download, ExternalLink, Calendar, DollarSign, MapPin, User, Briefcase, FileText } from 'lucide-react'
-
-interface Employee {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
-  job_title: string
-  job_description?: string
-  annual_gross_salary: number
-  monthly_gross: number
-  annual_basic: number
-  annual_hra: number
-  annual_lta: number
-  annual_special_allowance: number
-  monthly_basic: number
-  monthly_hra: number
-  monthly_lta: number
-  monthly_special_allowance: number
-  yfbp: number
-  mfbp: number
-  bonus?: number
-  agreement_status: string
-  pdf_url?: string
-  doc_url?: string
-  pdf_download_url?: string
-  joining_date: string
-  last_date?: string
-  created_at: string
-  client_name?: string
-  client_email?: string
-  manager_details?: string
-  fathers_name?: string
-  age?: number
-  gender?: string
-  address_line1?: string
-  address_line2?: string
-  city?: string
-  state?: string
-  pincode?: string
-  place?: string
-  aadhar?: string
-  processing_started_at?: string
-  processing_completed_at?: string
-}
+import { Employee } from './employee/types'
 
 interface EmployeeDetailModalProps {
   employee: Employee
@@ -222,10 +179,10 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
                   <p className="text-gray-900">{employee.place}</p>
                 </div>
               )}
-              {(employee.bonus && employee.bonus > 0) && (
+              {employee.bonus && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Bonus</label>
-                  <p className="text-gray-900">{formatCurrency(employee.bonus)}</p>
+                  <p className="text-gray-900">{employee.bonus}</p>
                 </div>
               )}
             </div>
