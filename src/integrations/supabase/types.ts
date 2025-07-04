@@ -20,7 +20,7 @@ export type Database = {
           annual_gross_salary: number
           annual_hra: number
           annual_lta: number
-          annual_special_allowance: number
+          annual_special_allowance: number | null
           bonus: number | null
           city: string | null
           client_email: string | null
@@ -38,12 +38,12 @@ export type Database = {
           last_date: string | null
           last_name: string
           manager_details: string | null
-          mfbp: number
+          mfbp: number | null
           monthly_basic: number
           monthly_gross: number
           monthly_hra: number
           monthly_lta: number
-          monthly_special_allowance: number
+          monthly_special_allowance: number | null
           pdf_download_url: string | null
           pdf_url: string | null
           pincode: string | null
@@ -55,7 +55,7 @@ export type Database = {
           state: string | null
           updated_at: string
           user_id: string | null
-          yfbp: number
+          yfbp: number | null
           zoho_sign_document_id: string | null
           zoho_sign_error: string | null
           zoho_sign_request_id: string | null
@@ -71,7 +71,7 @@ export type Database = {
           annual_gross_salary: number
           annual_hra: number
           annual_lta: number
-          annual_special_allowance: number
+          annual_special_allowance?: number | null
           bonus?: number | null
           city?: string | null
           client_email?: string | null
@@ -89,12 +89,12 @@ export type Database = {
           last_date?: string | null
           last_name: string
           manager_details?: string | null
-          mfbp: number
+          mfbp?: number | null
           monthly_basic: number
           monthly_gross: number
           monthly_hra: number
           monthly_lta: number
-          monthly_special_allowance: number
+          monthly_special_allowance?: number | null
           pdf_download_url?: string | null
           pdf_url?: string | null
           pincode?: string | null
@@ -106,7 +106,7 @@ export type Database = {
           state?: string | null
           updated_at?: string
           user_id?: string | null
-          yfbp: number
+          yfbp?: number | null
           zoho_sign_document_id?: string | null
           zoho_sign_error?: string | null
           zoho_sign_request_id?: string | null
@@ -122,7 +122,7 @@ export type Database = {
           annual_gross_salary?: number
           annual_hra?: number
           annual_lta?: number
-          annual_special_allowance?: number
+          annual_special_allowance?: number | null
           bonus?: number | null
           city?: string | null
           client_email?: string | null
@@ -140,12 +140,12 @@ export type Database = {
           last_date?: string | null
           last_name?: string
           manager_details?: string | null
-          mfbp?: number
+          mfbp?: number | null
           monthly_basic?: number
           monthly_gross?: number
           monthly_hra?: number
           monthly_lta?: number
-          monthly_special_allowance?: number
+          monthly_special_allowance?: number | null
           pdf_download_url?: string | null
           pdf_url?: string | null
           pincode?: string | null
@@ -157,7 +157,7 @@ export type Database = {
           state?: string | null
           updated_at?: string
           user_id?: string | null
-          yfbp?: number
+          yfbp?: number | null
           zoho_sign_document_id?: string | null
           zoho_sign_error?: string | null
           zoho_sign_request_id?: string | null

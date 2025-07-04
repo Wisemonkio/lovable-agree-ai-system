@@ -70,7 +70,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     const annualBasic = annualGross / 2
     const annualHra = annualBasic / 2
     const annualLta = annualBasic / 5
-    const yfbp = annualGross <= 1275000 ? 0 : 169392
+    const yfbp = annualGross <= 1440000 ? 0 : 169392
     const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - yfbp - 21600
     
     return {
