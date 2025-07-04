@@ -117,7 +117,8 @@ const SendForESignButton: React.FC<SendForESignButtonProps> = ({ employee, onSuc
     return isLoading || 
            !employee.pdf_download_url || 
            employee.agreement_status !== 'completed' ||
-           employee.zoho_sign_status === 'completed'
+           employee.zoho_sign_status === 'completed' ||
+           employee.zoho_sign_status === 'sent'
   }
 
   const shouldShowButton = () => {
