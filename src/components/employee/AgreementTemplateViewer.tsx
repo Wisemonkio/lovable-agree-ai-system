@@ -50,8 +50,8 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
                 <span>Preview Template</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-6xl w-full h-[80vh]">
-              <DialogHeader>
+            <DialogContent className="w-screen h-screen max-w-none p-0">
+              <DialogHeader className="p-4 border-b">
                 <DialogTitle className="flex items-center justify-between">
                   <span>Agreement Template Preview</span>
                   <div className="flex space-x-2">
@@ -76,10 +76,10 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
                   </div>
                 </DialogTitle>
               </DialogHeader>
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 h-full">
                 <iframe
                   src={viewMode === 'edit' ? editUrl : previewUrl}
-                  className="w-full h-full border border-gray-300 rounded"
+                  className="w-full h-full border-0"
                   title="Agreement Template"
                   allow="clipboard-write"
                 />
