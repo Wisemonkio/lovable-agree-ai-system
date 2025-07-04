@@ -43,10 +43,16 @@ export type Database = {
           place: string | null
           processing_completed_at: string | null
           processing_started_at: string | null
+          signing_completed_at: string | null
+          signing_sent_at: string | null
           state: string | null
           updated_at: string
           user_id: string | null
           yfbp: number
+          zoho_sign_document_id: string | null
+          zoho_sign_error: string | null
+          zoho_sign_request_id: string | null
+          zoho_sign_status: string | null
         }
         Insert: {
           address_line1?: string | null
@@ -81,10 +87,16 @@ export type Database = {
           place?: string | null
           processing_completed_at?: string | null
           processing_started_at?: string | null
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string | null
           yfbp: number
+          zoho_sign_document_id?: string | null
+          zoho_sign_error?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
         }
         Update: {
           address_line1?: string | null
@@ -119,10 +131,16 @@ export type Database = {
           place?: string | null
           processing_completed_at?: string | null
           processing_started_at?: string | null
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string | null
           yfbp?: number
+          zoho_sign_document_id?: string | null
+          zoho_sign_error?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
         }
         Relationships: []
       }
@@ -180,6 +198,13 @@ export type Database = {
             referencedRelation: "employee_details"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "generated_agreements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_signing_status"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -211,7 +236,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_signing_status: {
+        Row: {
+          display_status: string | null
+          email: string | null
+          first_name: string | null
+          has_pdf: boolean | null
+          id: string | null
+          last_name: string | null
+          pdf_url: string | null
+          sent_for_signing: boolean | null
+          signing_completed_at: string | null
+          signing_sent_at: string | null
+          zoho_sign_request_id: string | null
+          zoho_sign_status: string | null
+        }
+        Insert: {
+          display_status?: never
+          email?: string | null
+          first_name?: string | null
+          has_pdf?: never
+          id?: string | null
+          last_name?: string | null
+          pdf_url?: string | null
+          sent_for_signing?: never
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Update: {
+          display_status?: never
+          email?: string | null
+          first_name?: string | null
+          has_pdf?: never
+          id?: string | null
+          last_name?: string | null
+          pdf_url?: string | null
+          sent_for_signing?: never
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

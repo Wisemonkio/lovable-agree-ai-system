@@ -1,10 +1,9 @@
 
 import React from 'react'
-import { Eye, Download, FileText, Calendar, DollarSign } from 'lucide-react'
+import { Calendar, DollarSign, Download, Eye, Mail, MapPin, User, FileText } from 'lucide-react'
 import { Employee } from './types'
-import { getStatusColor, getStatusIcon, formatCurrency, formatDate } from './utils'
-import ManualTriggerButton from '../ManualTriggerButton'
 import EmployeeStatusIndicator from './EmployeeStatusIndicator'
+import SendForESignButton from './SendForESignButton'
 
 interface EmployeeCardProps {
   employee: Employee
@@ -13,106 +12,146 @@ interface EmployeeCardProps {
   onRefresh: () => void
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({
-  employee,
-  onViewDetails,
+const EmployeeCard: React.FC<EmployeeCardProps> = ({ 
+  employee, 
+  onViewDetails, 
   onDownload,
-  onRefresh
+  onRefresh 
 }) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4 text-white">
-        <div className="flex items-center justify-between">
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-lg font-semibold text-gray-900">
               {employee.first_name} {employee.last_name}
             </h3>
-            <p className="text-blue-100 text-sm">{employee.job_title}</p>
+            <p className="text-gray-600 text-sm">{employee.job_title}</p>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-blue-100">Employee ID</div>
-            <div className="text-xs font-mono">{employee.id.substring(0, 8)}</div>
+          <EmployeeStatusIndicator status={employee.agreement_status} />
+        </div>
+        
+        <div className="flex items-center text-gray-500 text-sm space-x-4">
+          <div className="flex items-center space-x-1">
+            <Mail className="w-4 h-4" />
+            <span className="truncate max-w-[200px]">{employee.email}</span>
           </div>
         </div>
       </div>
       
       {/* Content */}
-      <div className="p-6">
-        {/* Status Badge */}
-        <div className="flex items-center justify-between mb-4">
-          <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(employee.agreement_status)}`}>
-            {getStatusIcon(employee.agreement_status)}
-            <span className="capitalize">{employee.agreement_status}</span>
-          </span>
-          <span className="text-xs text-gray-500">
-            Added {formatDate(employee.created_at)}
+      <div className="p-6 space-y-4">
+        {/* Salary Information */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <DollarSign className="w-4 h-4" />
+            <span className="text-sm font-medium">Annual Salary</span>
+          </div>
+          <span className="font-semibold text-gray-900">
+            {formatCurrency(employee.annual_gross_salary)}
           </span>
         </div>
         
-        {/* Employee Details */}
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2 text-sm">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">Joins: {formatDate(employee.joining_date)}</span>
+        {/* Joining Date */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Calendar className="w-4 h-4" />
+            <span className="text-sm font-medium">Joining Date</span>
           </div>
-          
-          <div className="flex items-center space-x-2 text-sm">
-            <DollarSign className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">
-              {formatCurrency(employee.annual_gross_salary)}/year
+          <span className="text-gray-900">{formatDate(employee.joining_date)}</span>
+        </div>
+        
+        {/* Location (if available) */}
+        {(employee.city || employee.state) && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm font-medium">Location</span>
+            </div>
+            <span className="text-gray-900">
+              {[employee.city, employee.state].filter(Boolean).join(', ')}
             </span>
           </div>
-          
-          {employee.client_name && (
-            <div className="flex items-center space-x-2 text-sm">
-              <FileText className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-600">Client: {employee.client_name}</span>
-            </div>
-          )}
-          
-          {(employee.city || employee.state) && (
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-gray-400">📍</span>
-              <span className="text-gray-600">
-                {[employee.city, employee.state].filter(Boolean).join(', ')}
-              </span>
-            </div>
-          )}
+        )}
+
+        {/* Employee ID */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <User className="w-4 h-4" />
+            <span className="text-sm font-medium">Employee ID</span>
+          </div>
+          <span className="text-gray-900 text-sm font-mono">
+            {employee.id.substring(0, 8)}
+          </span>
         </div>
-        
-        {/* Action Buttons */}
-        <div className="mt-6 space-y-3">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => onViewDetails(employee)}
-              className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-1"
-            >
-              <Eye className="w-4 h-4" />
-              <span>View Details</span>
-            </button>
+
+        {/* Signing Status (if applicable) */}
+        {employee.zoho_sign_status && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <FileText className="w-4 h-4" />
+              <span className="text-sm font-medium">Signing Status</span>
+            </div>
+            <span className={`text-sm px-2 py-1 rounded-full ${
+              employee.zoho_sign_status === 'completed' ? 'bg-green-100 text-green-800' :
+              employee.zoho_sign_status === 'sent' ? 'bg-yellow-100 text-yellow-800' :
+              employee.zoho_sign_status === 'failed' ? 'bg-red-100 text-red-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {employee.zoho_sign_status === 'completed' ? 'Signed' :
+               employee.zoho_sign_status === 'sent' ? 'Pending' :
+               employee.zoho_sign_status === 'failed' ? 'Failed' :
+               employee.zoho_sign_status}
+            </span>
+          </div>
+        )}
+      </div>
+      
+      {/* Actions */}
+      <div className="px-6 py-4 bg-gray-50 rounded-b-lg border-t border-gray-100">
+        <div className="flex items-center justify-between space-x-3">
+          <button
+            onClick={() => onViewDetails(employee)}
+            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            <span>View Details</span>
+          </button>
+          
+          <div className="flex items-center space-x-2">
+            <SendForESignButton 
+              employee={employee}
+              onSuccess={onRefresh}
+            />
             
             {employee.agreement_status === 'completed' && employee.pdf_download_url && (
               <button
                 onClick={() => onDownload(employee)}
-                className="bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+                className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
               >
                 <Download className="w-4 h-4" />
+                <span>Download</span>
               </button>
             )}
           </div>
-          
-          {/* Manual trigger for testing Edge Function */}
-          {(employee.agreement_status === 'pending' || employee.agreement_status === 'failed') && (
-            <ManualTriggerButton 
-              employeeId={employee.id} 
-              onSuccess={onRefresh}
-            />
-          )}
         </div>
-        
-        {/* Processing Status */}
-        <EmployeeStatusIndicator status={employee.agreement_status} />
       </div>
     </div>
   )

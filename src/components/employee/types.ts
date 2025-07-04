@@ -34,4 +34,10 @@ export interface Employee {
   place?: string
   processing_started_at?: string
   processing_completed_at?: string
+  zoho_sign_request_id?: string
+  zoho_sign_document_id?: string
+  zoho_sign_status?: 'sent' | 'completed' | 'declined' | 'expired' | 'failed'
+  signing_sent_at?: string
+  signing_completed_at?: string
+  zoho_sign_error?: string
 }
