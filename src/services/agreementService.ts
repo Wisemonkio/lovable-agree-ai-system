@@ -16,22 +16,25 @@ export interface AgreementGenerationResponse {
 
 export const generateEmployeeAgreement = async (employeeId: string): Promise<AgreementGenerationResponse> => {
   try {
-    console.log(`Calling Edge Function for employee: ${employeeId}`)
+    console.log(`🚀 Calling Edge Function for employee: ${employeeId}`)
     
     const { data, error } = await supabase.functions.invoke('generate-agreement', {
-      body: { employee_id: employeeId }
+      body: { 
+        employeeId: employeeId,
+        employee_id: employeeId // Send both formats for compatibility
+      }
     })
     
     if (error) {
-      console.error('Edge Function error:', error)
+      console.error('❌ Edge Function error:', error)
       throw new Error(error.message || 'Failed to generate agreement')
     }
     
-    console.log('Edge Function response:', data)
+    console.log('✅ Edge Function response:', data)
     
     // Check if the response indicates failure
     if (data && !data.success) {
-      console.error('Edge Function returned failure:', data)
+      console.error('❌ Edge Function returned failure:', data)
       return {
         success: false,
         error: data.error || 'Unknown error from Edge Function',
@@ -42,7 +45,7 @@ export const generateEmployeeAgreement = async (employeeId: string): Promise<Agr
     return data as AgreementGenerationResponse
     
   } catch (error) {
-    console.error('Error calling agreement generation:', error)
+    console.error('💥 Error calling agreement generation:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

@@ -1,78 +1,96 @@
 
 import React, { useState } from 'react'
-import { FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-import { generateEmployeeAgreement } from '../services/agreementService'
+import { supabase } from '@/integrations/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Loader2, FileText } from 'lucide-react'
 
 interface ManualTriggerButtonProps {
   employeeId: string
+  employeeName: string
   onSuccess?: () => void
 }
 
-const ManualTriggerButton: React.FC<ManualTriggerButtonProps> = ({ employeeId, onSuccess }) => {
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
-  
-  const handleTrigger = async () => {
-    setLoading(true)
-    setResult(null)
+const ManualTriggerButton: React.FC<ManualTriggerButtonProps> = ({ 
+  employeeId, 
+  employeeName, 
+  onSuccess 
+}) => {
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const handleManualTrigger = async () => {
+    setIsGenerating(true)
+    setError(null)
+    setSuccess(false)
     
     try {
-      const response = await generateEmployeeAgreement(employeeId)
+      console.log(`🔥 Manually triggering agreement generation for employee: ${employeeId}`)
       
-      if (response.success) {
-        setResult({
-          success: true,
-          message: 'Agreement generated successfully!'
-        })
-        onSuccess?.()
-      } else {
-        setResult({
-          success: false,
-          message: response.error || 'Failed to generate agreement'
-        })
-      }
-    } catch (error) {
-      setResult({
-        success: false,
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      const { data, error } = await supabase.functions.invoke('generate-agreement', {
+        body: { 
+          employeeId: employeeId,
+          employee_id: employeeId,
+          manual_trigger: true
+        }
       })
+      
+      if (error) {
+        console.error('❌ Manual trigger error:', error)
+        throw new Error(error.message || 'Failed to generate agreement')
+      }
+      
+      console.log('✅ Manual trigger response:', data)
+      
+      if (data && data.success) {
+        console.log('🎉 Agreement generated successfully!')
+        setSuccess(true)
+        if (onSuccess) {
+          onSuccess()
+        }
+      } else {
+        throw new Error(data?.error || 'Agreement generation failed')
+      }
+      
+    } catch (err) {
+      console.error('💥 Manual trigger failed:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error occurred')
     } finally {
-      setLoading(false)
+      setIsGenerating(false)
     }
   }
-  
+
+  if (success) {
+    return (
+      <div className="flex items-center space-x-2 text-green-600">
+        <FileText className="w-4 h-4" />
+        <span className="text-sm font-medium">Agreement Generated!</span>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
-      <button
-        onClick={handleTrigger}
-        disabled={loading}
-        className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      <Button 
+        onClick={handleManualTrigger}
+        disabled={isGenerating}
+        size="sm"
+        variant="outline"
+        className="flex items-center space-x-2"
       >
-        {loading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Generating...</span>
-          </>
+        {isGenerating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
-          <>
-            <FileText className="w-4 h-4" />
-            <span>Generate Agreement</span>
-          </>
+          <FileText className="w-4 h-4" />
         )}
-      </button>
+        <span>
+          {isGenerating ? 'Generating...' : 'Generate Agreement'}
+        </span>
+      </Button>
       
-      {result && (
-        <div className={`flex items-center space-x-2 text-sm p-2 rounded ${
-          result.success 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
-            : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
-          {result.success ? (
-            <CheckCircle className="w-4 h-4" />
-          ) : (
-            <AlertCircle className="w-4 h-4" />
-          )}
-          <span>{result.message}</span>
+      {error && (
+        <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+          <strong>Error:</strong> {error}
         </div>
       )}
     </div>
