@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { generateEmployeeAgreement } from '../services/agreementService'
 import { useTemplateManagement } from '@/hooks/useTemplateManagement'
 import { EmployeeFormData, AgreementStatus } from './employee/EmployeeFormTypes'
+import { EmployeeSecuritySchema, sanitizeInput, FormRateLimit } from './employee/SecurityValidation'
 import PersonalInfoSection from './employee/PersonalInfoSection'
 import EmploymentDetailsSection from './employee/EmploymentDetailsSection'
 import TemplateManagementSection from './employee/TemplateManagementSection'
@@ -61,6 +62,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null)
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [agreementStatus, setAgreementStatus] = useState<AgreementStatus>(null)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [isRateLimited, setIsRateLimited] = useState(false)
+  
+  // Security: Check authentication on component mount
+  useEffect(() => {
+    if (!user) {
+      setError('You must be logged in to create employees')
+      return
+    }
+  }, [user])
   
   // Update selected template when company name changes
   useEffect(() => {
@@ -90,10 +101,65 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   const transformGender = (gender: string) => {
     return gender === 'Male' ? 'Son' : gender === 'Female' ? 'Daughter' : ''
   }
+
+  // Security: Comprehensive form validation
+  const validateForm = (): boolean => {
+    try {
+      // Clear previous validation errors
+      setValidationErrors({})
+      
+      // Validate using Zod schema
+      EmployeeSecuritySchema.parse({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        jobTitle: formData.jobTitle,
+        annualGrossSalary: formData.annualGrossSalary,
+        clientName: formData.clientName,
+        clientEmail: formData.clientEmail,
+        aadhar: formData.aadhar || undefined,
+        pincode: formData.pincode || undefined,
+        age: formData.age || undefined
+      })
+      
+      return true
+    } catch (error: any) {
+      const errors: Record<string, string> = {}
+      
+      if (error.errors) {
+        error.errors.forEach((err: any) => {
+          errors[err.path[0]] = err.message
+        })
+      }
+      
+      setValidationErrors(errors)
+      return false
+    }
+  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    
+    // Security checks
+    if (!user) {
+      setError('Authentication required. Please log in.')
+      return
+    }
+    
+    // Rate limiting check
+    if (!FormRateLimit.canSubmit()) {
+      const waitTime = Math.ceil(FormRateLimit.getTimeUntilNextSubmission() / 1000)
+      setError(`Too many submissions. Please wait ${waitTime} seconds before trying again.`)
+      setIsRateLimited(true)
+      setTimeout(() => setIsRateLimited(false), waitTime * 1000)
+      return
+    }
+    
+    // Validate form data
+    if (!validateForm()) {
+      setError('Please fix the validation errors before submitting.')
+      return
+    }
     
     setSubmitting(true)
     setError(null)
@@ -104,37 +170,43 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       const lastDate = calculateLastDate()
       const transformedGender = transformGender(formData.gender)
       
+      // Sanitize all text inputs before database insertion
+      const sanitizedData = {
+        user_id: user.id, // Explicitly set user_id for security
+        first_name: sanitizeInput(formData.firstName),
+        last_name: sanitizeInput(formData.lastName),
+        email: formData.email.toLowerCase().trim(),
+        job_title: sanitizeInput(formData.jobTitle),
+        job_description: sanitizeInput(formData.jobDescription),
+        annual_gross_salary: formData.annualGrossSalary,
+        bonus: formData.bonus ? sanitizeInput(formData.bonus) : null,
+        joining_date: formData.joiningDate,
+        last_date: lastDate,
+        client_name: sanitizeInput(formData.clientName),
+        client_email: formData.clientEmail.toLowerCase().trim(),
+        manager_details: formData.managerDetails ? sanitizeInput(formData.managerDetails) : null,
+        fathers_name: formData.fathersName ? sanitizeInput(formData.fathersName) : null,
+        age: formData.age || null,
+        gender: transformedGender,
+        address_line1: formData.addressLine1 ? sanitizeInput(formData.addressLine1) : null,
+        address_line2: formData.addressLine2 ? sanitizeInput(formData.addressLine2) : null,
+        city: formData.city ? sanitizeInput(formData.city) : null,
+        state: formData.state ? sanitizeInput(formData.state) : null,
+        pincode: formData.pincode || null,
+        aadhar: formData.aadhar || null,
+        ...salaryBreakdown
+      }
+      
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
-        .insert({
-          user_id: user.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          job_title: formData.jobTitle,
-          job_description: formData.jobDescription,
-          annual_gross_salary: formData.annualGrossSalary,
-          bonus: formData.bonus,
-          joining_date: formData.joiningDate,
-          last_date: lastDate,
-          client_name: formData.clientName,
-          client_email: formData.clientEmail,
-          manager_details: formData.managerDetails,
-          fathers_name: formData.fathersName,
-          age: formData.age,
-          gender: transformedGender,
-          address_line1: formData.addressLine1,
-          address_line2: formData.addressLine2,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode,
-          aadhar: formData.aadhar,
-          ...salaryBreakdown
-        })
+        .insert(sanitizedData)
         .select()
         .single()
       
-      if (createError) throw createError
+      if (createError) {
+        console.error('Database error:', createError)
+        throw new Error('Failed to create employee record. Please try again.')
+      }
       
       setEmployeeId(employee.id)
       setAgreementStatus('generating')
@@ -154,7 +226,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       
     } catch (error) {
       console.error('Error creating employee:', error)
-      setError(error instanceof Error ? error.message : 'Unknown error occurred')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setError(errorMessage)
       setAgreementStatus('failed')
     } finally {
       setSubmitting(false)
@@ -163,16 +236,29 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
+    
+    // Security: Sanitize input on change
+    const sanitizedValue = type === 'text' || type === 'email' ? sanitizeInput(value) : value
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value
+      [name]: type === 'number' ? parseFloat(value) || 0 : sanitizedValue
     }))
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
   }
 
   const handleJobDescriptionChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      jobDescription: value
+      jobDescription: sanitizeInput(value)
     }))
   }
 
@@ -208,13 +294,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <PersonalInfoSection formData={formData} onChange={handleInputChange} />
+          <PersonalInfoSection 
+            formData={formData} 
+            onChange={handleInputChange}
+            validationErrors={validationErrors}
+          />
           
           <EmploymentDetailsSection 
             formData={formData} 
             selectedTemplate={selectedTemplate}
             companyTemplates={companyTemplates}
-            onChange={handleInputChange} 
+            onChange={handleInputChange}
+            validationErrors={validationErrors}
           />
 
           {formData.clientName && (
@@ -240,7 +331,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
             />
           </div>
           
-          <AddressSection formData={formData} onChange={handleInputChange} />
+          <AddressSection 
+            formData={formData} 
+            onChange={handleInputChange}
+            validationErrors={validationErrors}
+          />
+          
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="font-semibold text-red-800 mb-2">Please fix the following errors:</h4>
+              <ul className="list-disc list-inside text-red-700">
+                {Object.entries(validationErrors).map(([field, error]) => (
+                  <li key={field}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -250,7 +356,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
           
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || isRateLimited}
             className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
           >
             {submitting ? (
@@ -258,6 +364,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Processing...</span>
               </>
+            ) : isRateLimited ? (
+              <span>Rate Limited - Please Wait</span>
             ) : (
               <span>Create Employee & Generate Agreement</span>
             )}
