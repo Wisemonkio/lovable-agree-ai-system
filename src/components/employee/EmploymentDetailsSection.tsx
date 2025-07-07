@@ -8,13 +8,15 @@ interface EmploymentDetailsSectionProps {
   selectedTemplate: CompanyTemplate | null
   companyTemplates: CompanyTemplate[]
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+  validationErrors: Record<string, string>
 }
 
 const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({ 
   formData, 
   selectedTemplate, 
   companyTemplates, 
-  onChange 
+  onChange,
+  validationErrors
 }) => {
   const calculateLastDate = () => {
     if (!formData.joiningDate) return 'Select joining date first'
@@ -36,8 +38,13 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             required
             value={formData.jobTitle}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.jobTitle ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.jobTitle && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.jobTitle}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Annual Gross Salary (₹) *</label>
@@ -48,8 +55,13 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             min="0"
             value={formData.annualGrossSalary}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.annualGrossSalary ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.annualGrossSalary && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.annualGrossSalary}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Variable/Bonus (in words)</label>
@@ -58,9 +70,14 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             name="bonus"
             value={formData.bonus}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.bonus ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="e.g., Ten Thousand Rupees Only"
           />
+          {validationErrors.bonus && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.bonus}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date *</label>
@@ -70,8 +87,13 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             required
             value={formData.joiningDate}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.joiningDate ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.joiningDate && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.joiningDate}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Last Date (Auto-calculated)</label>
@@ -98,7 +120,9 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             required
             value={formData.clientName}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.clientName ? 'border-red-500' : 'border-gray-300'
+            }`}
             list="company-templates"
           />
           <datalist id="company-templates">
@@ -106,6 +130,9 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
               <option key={template.id} value={template.company_name} />
             ))}
           </datalist>
+          {validationErrors.clientName && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.clientName}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Client Email *</label>
@@ -115,8 +142,13 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             required
             value={formData.clientEmail}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.clientEmail ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.clientEmail && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.clientEmail}</p>
+          )}
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Manager Details</label>
@@ -125,8 +157,13 @@ const EmploymentDetailsSection: React.FC<EmploymentDetailsSectionProps> = ({
             name="managerDetails"
             value={formData.managerDetails}
             onChange={onChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+              validationErrors.managerDetails ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.managerDetails && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.managerDetails}</p>
+          )}
         </div>
       </div>
     </div>
