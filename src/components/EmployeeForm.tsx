@@ -169,24 +169,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     }
   }
   
-  // Calculate salary breakdown - removed yfbp and mfbp since they're generated columns
+  // Calculate only the basic salary breakdown - let database generate the rest
   const calculateSalaryBreakdown = (annualGross: number) => {
-    const annualBasic = annualGross / 2
-    const annualHra = annualBasic / 2
-    const annualLta = annualBasic / 5
-    const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - 21600
-    
     return {
       monthly_gross: annualGross / 12,
-      annual_basic: annualBasic,
-      annual_hra: annualHra,
-      annual_lta: annualLta,
-      annual_special_allowance: annualSpecialAllowance,
-      monthly_basic: annualBasic / 12,
-      monthly_hra: annualHra / 12,
-      monthly_lta: annualLta / 12,
-      monthly_special_allowance: annualSpecialAllowance / 12
-      // Removed yfbp and mfbp as they are generated columns
+      annual_basic: annualGross / 2,
+      annual_hra: (annualGross / 2) / 2,
+      annual_lta: (annualGross / 2) / 5,
+      monthly_basic: (annualGross / 2) / 12,
+      monthly_hra: ((annualGross / 2) / 2) / 12,
+      monthly_lta: ((annualGross / 2) / 5) / 12
+      // Removed yfbp, mfbp, annual_special_allowance, and monthly_special_allowance 
+      // as they are generated columns in the database
     }
   }
 
