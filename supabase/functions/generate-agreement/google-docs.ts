@@ -24,19 +24,30 @@ export async function replacePlaceholdersInDoc(docId: string, employee: Employee
   const accessToken = await getGoogleAccessToken()
   const placeholders = createPlaceholders(employee)
 
-  console.log('Replacing placeholders in Google Doc:', Object.keys(placeholders).length, 'placeholders')
+  console.log('🔄 Replacing placeholders in Google Doc...')
+  console.log('📊 Total placeholders to replace:', Object.keys(placeholders).length)
+  console.log('📋 Placeholders:', Object.keys(placeholders).join(', '))
 
   // Replace placeholders one by one
+  let successCount = 0
+  let failCount = 0
+  
   for (const [placeholder, value] of Object.entries(placeholders)) {
     if (value && value.trim()) { // Only replace if value exists and is not empty
       try {
         await replaceTextInDoc(docId, placeholder, value, accessToken)
-        console.log(`✓ Replaced "${placeholder}" with "${value}"`)
+        console.log(`✅ Replaced "${placeholder}" with "${value}"`)
+        successCount++
       } catch (error) {
-        console.warn(`⚠ Failed to replace "${placeholder}":`, error.message)
+        console.warn(`⚠️ Failed to replace "${placeholder}":`, error.message)
+        failCount++
       }
+    } else {
+      console.log(`⏭️ Skipping empty placeholder "${placeholder}"`)
     }
   }
+  
+  console.log(`📊 Placeholder replacement summary: ${successCount} successful, ${failCount} failed`)
 }
 
 async function replaceTextInDoc(docId: string, searchText: string, replaceText: string, accessToken: string): Promise<void> {
@@ -70,7 +81,8 @@ async function replaceTextInDoc(docId: string, searchText: string, replaceText: 
 export async function exportDocAsPDF(docId: string): Promise<Uint8Array> {
   const accessToken = await getGoogleAccessToken()
   
-  console.log('Exporting document as PDF...')
+  console.log('📄 Exporting document as PDF...')
+  console.log('📋 Document ID:', docId)
   
   const response = await fetch(`https://www.googleapis.com/drive/v3/files/${docId}/export?mimeType=application/pdf`, {
     method: 'GET',
@@ -81,18 +93,26 @@ export async function exportDocAsPDF(docId: string): Promise<Uint8Array> {
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('❌ PDF export failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText
+    })
     throw new Error(`Failed to export document as PDF: ${response.statusText}. ${errorText}`)
   }
 
   const arrayBuffer = await response.arrayBuffer()
-  console.log('PDF export successful, size:', arrayBuffer.byteLength)
+  console.log('✅ PDF export successful, size:', arrayBuffer.byteLength, 'bytes')
   return new Uint8Array(arrayBuffer)
 }
 
 export async function createDocumentCopy(sourceDocId: string, title: string): Promise<string> {
   const accessToken = await getGoogleAccessToken()
   
-  console.log('Creating document copy...')
+  console.log('📄 Creating document copy...')
+  console.log('📋 Source Document ID:', sourceDocId)
+  console.log('📝 New Document Title:', title)
+  
   const response = await fetch(`https://www.googleapis.com/drive/v3/files/${sourceDocId}/copy`, {
     method: 'POST',
     headers: {
@@ -106,18 +126,25 @@ export async function createDocumentCopy(sourceDocId: string, title: string): Pr
   
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('❌ Document copy failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText
+    })
     throw new Error(`Failed to create document copy: ${response.statusText}. ${errorText}`)
   }
   
   const data = await response.json()
-  console.log('Document copy created successfully, ID:', data.id)
+  console.log('✅ Document copy created successfully with ID:', data.id)
   return data.id
 }
 
 export async function deleteDocument(docId: string): Promise<void> {
   const accessToken = await getGoogleAccessToken()
   
-  console.log('Deleting temporary document...')
+  console.log('🗑️ Deleting temporary document...')
+  console.log('📋 Document ID to delete:', docId)
+  
   const response = await fetch(`https://www.googleapis.com/drive/v3/files/${docId}`, {
     method: 'DELETE',
     headers: {
@@ -127,8 +154,13 @@ export async function deleteDocument(docId: string): Promise<void> {
   
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('❌ Document deletion failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText
+    })
     throw new Error(`Failed to delete document: ${response.statusText}. ${errorText}`)
   }
   
-  console.log('Document deleted successfully')
+  console.log('✅ Document deleted successfully')
 }

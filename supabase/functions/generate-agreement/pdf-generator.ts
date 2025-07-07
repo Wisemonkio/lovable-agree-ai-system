@@ -113,56 +113,78 @@ export const generateAgreementPDF = async (employee: Employee, templateDocId?: s
   console.log('Template Doc ID:', templateDocId)
   
   try {
-    // If we have a Google Docs template ID, use the Google Docs workflow
+    // Always try Google Docs workflow first when we have a template ID
     if (templateDocId) {
-      console.log('Using Google Docs template workflow')
+      console.log('🔄 Using Google Docs template workflow')
+      console.log('📋 Template ID:', templateDocId)
       
       try {
         // Create a copy of the template document
         const tempDocTitle = `Agreement_${employee.first_name}_${employee.last_name}_${Date.now()}`
+        console.log('📄 Creating temporary document copy with title:', tempDocTitle)
+        
         const tempDocId = await createDocumentCopy(templateDocId, tempDocTitle)
-        console.log('Created temporary document copy:', tempDocId)
+        console.log('✅ Created temporary document copy with ID:', tempDocId)
         
         // Replace placeholders in the temporary document
+        console.log('🔄 Replacing placeholders in temporary document...')
         await replacePlaceholdersInDoc(tempDocId, employee)
-        console.log('Placeholders replaced successfully')
+        console.log('✅ Placeholders replaced successfully')
         
         // Export the document as PDF
+        console.log('📄 Exporting document as PDF...')
         const pdfBuffer = await exportDocAsPDF(tempDocId)
-        console.log('PDF exported successfully from Google Docs')
+        console.log('✅ PDF exported successfully from Google Docs, size:', pdfBuffer.length)
         
         // Clean up: delete the temporary document
+        console.log('🗑️ Cleaning up temporary document...')
         await deleteDocument(tempDocId)
-        console.log('Temporary document deleted successfully')
+        console.log('✅ Temporary document deleted successfully')
         
         return pdfBuffer
         
       } catch (googleDocsError) {
-        console.error('Google Docs workflow failed:', googleDocsError)
-        console.log('Falling back to default template')
+        console.error('❌ Google Docs workflow failed with error:', googleDocsError.message)
+        console.error('Error details:', googleDocsError)
+        
+        // Provide specific error guidance
+        if (googleDocsError.message.includes('permission') || googleDocsError.message.includes('access')) {
+          console.error('🔧 PERMISSION ERROR: The Google Service Account may not have access to the template document')
+          console.error('   Solution: Share the Google Docs template with the service account email')
+        } else if (googleDocsError.message.includes('not found') || googleDocsError.message.includes('404')) {
+          console.error('🔧 DOCUMENT NOT FOUND: The template document ID may be incorrect')
+          console.error('   Solution: Verify the DEFAULT_GOOGLE_DOC_ID or custom template ID is correct')
+        } else if (googleDocsError.message.includes('authentication') || googleDocsError.message.includes('401')) {
+          console.error('🔧 AUTHENTICATION ERROR: Google Service Account credentials may be invalid')
+          console.error('   Solution: Check GOOGLE_SERVICE_ACCOUNT_KEY secret configuration')
+        }
+        
+        console.log('⚠️ Falling back to hardcoded template due to Google Docs error')
         // Fall through to default template workflow
       }
+    } else {
+      console.log('ℹ️ No template document ID provided, using hardcoded template')
     }
     
-    // Use default template workflow (either no templateDocId or Google Docs failed)
-    console.log('Using default template workflow')
+    // Fallback: Use default hardcoded template workflow
+    console.log('🔄 Using hardcoded template workflow as fallback')
     
     // Get the default hardcoded template
     const defaultTemplate = getDefaultTemplate()
-    console.log('Retrieved default template')
+    console.log('✅ Retrieved hardcoded default template')
     
     // Replace placeholders in the template
     const processedContent = replacePlaceholders(defaultTemplate, employee)
-    console.log('Placeholders replaced in default template')
+    console.log('✅ Placeholders replaced in hardcoded template')
     
     // Generate PDF from the processed content
     const pdfBuffer = generatePDF(processedContent, employee)
-    console.log('PDF generated from default template')
+    console.log('✅ PDF generated from hardcoded template, size:', pdfBuffer.length)
     
     return pdfBuffer
     
   } catch (error) {
-    console.error('Error in generateAgreementPDF:', error)
+    console.error('💥 Error in generateAgreementPDF:', error)
     throw new Error(`Failed to generate agreement PDF: ${error.message}`)
   }
 }

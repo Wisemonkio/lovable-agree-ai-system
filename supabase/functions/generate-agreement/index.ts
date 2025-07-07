@@ -62,7 +62,9 @@ serve(async (req) => {
     let templateDetails = null
     
     const defaultTemplateId = Deno.env.get('DEFAULT_GOOGLE_DOC_ID')
-    console.log('🔧 Default template from env:', defaultTemplateId)
+    console.log('🔧 Environment variables check:')
+    console.log('   DEFAULT_GOOGLE_DOC_ID exists:', !!defaultTemplateId)
+    console.log('   DEFAULT_GOOGLE_DOC_ID value:', defaultTemplateId ? `${defaultTemplateId.substring(0, 10)}...` : 'NOT SET')
     
     if (employee.client_name) {
       console.log(`🏢 Checking for custom template for company: ${employee.client_name}`)
@@ -118,10 +120,18 @@ serve(async (req) => {
 
     // Final template validation
     if (!templateDocId) {
-      console.error('❌ No template document ID available')
-      console.error('   - No custom template found for company')
-      console.error('   - No default template configured in environment')
-      throw new Error('No template document ID available (neither custom nor default)')
+      console.error('❌ TEMPLATE CONFIGURATION ERROR:')
+      console.error('   - Company Name:', employee.client_name || 'N/A')
+      console.error('   - Custom template found: NO')
+      console.error('   - Default template configured:', !!defaultTemplateId)
+      console.error('   - Default template value:', defaultTemplateId || 'NOT SET')
+      console.error('')
+      console.error('🔧 SOLUTION: Set the DEFAULT_GOOGLE_DOC_ID secret in Supabase Edge Functions')
+      console.error('   1. Go to Supabase Dashboard > Edge Functions > Settings')
+      console.error('   2. Add secret: DEFAULT_GOOGLE_DOC_ID')
+      console.error('   3. Set value to your generic Google Docs template ID')
+      console.error('')
+      throw new Error('No template document ID available. Please configure DEFAULT_GOOGLE_DOC_ID secret.')
     }
 
     console.log(`🎯 FINAL TEMPLATE SELECTION:`)
@@ -132,8 +142,10 @@ serve(async (req) => {
       console.log(`   Template Name: ${templateDetails.template_name}`)
     }
 
-    // Generate the PDF
-    console.log(`🎯 Generating PDF with template: ${templateDocId}`)
+    // Generate the PDF using Google Docs workflow for both custom and default templates
+    console.log(`📋 Generating PDF with template: ${templateDocId}`)
+    console.log(`🔄 Template processing mode: Google Docs workflow (${templateSource})`)
+    
     const pdfBuffer = await generateAgreementPDF(employee, templateDocId)
     console.log(`✅ PDF generated successfully, size: ${pdfBuffer.length} bytes`)
     
