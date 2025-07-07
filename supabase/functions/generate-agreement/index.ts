@@ -56,9 +56,13 @@ serve(async (req) => {
       job_title: employee.job_title
     }, null, 2))
 
-    // Check for company-specific template
-    let templateDocId = Deno.env.get('DEFAULT_GOOGLE_DOC_ID')
-    console.log('🔧 Default template from env:', templateDocId)
+    // Template selection logic
+    let templateDocId = null
+    let templateSource = 'none'
+    let templateDetails = null
+    
+    const defaultTemplateId = Deno.env.get('DEFAULT_GOOGLE_DOC_ID')
+    console.log('🔧 Default template from env:', defaultTemplateId)
     
     if (employee.client_name) {
       console.log(`🏢 Checking for custom template for company: ${employee.client_name}`)
@@ -83,22 +87,50 @@ serve(async (req) => {
       
       if (!templateError && companyTemplate) {
         templateDocId = companyTemplate.google_doc_id
-        console.log(`✅ Using custom template for ${employee.client_name}: ${companyTemplate.template_name}`)
-        console.log('Custom template details:', JSON.stringify(companyTemplate, null, 2))
+        templateSource = 'custom'
+        templateDetails = companyTemplate
+        console.log(`✅ Using CUSTOM template for ${employee.client_name}:`)
+        console.log(`   Template Name: ${companyTemplate.template_name}`)
+        console.log(`   Template ID: ${companyTemplate.google_doc_id}`)
+        console.log(`   Template URL: ${companyTemplate.google_doc_url}`)
       } else {
-        console.log(`ℹ️ No custom template found for ${employee.client_name}, using default template`)
+        console.log(`ℹ️ No custom template found for company: ${employee.client_name}`)
         if (templateError) {
-          console.log('Template query error:', templateError)
+          console.log('   Template query error:', templateError)
         }
+        
+        // Use default template for companies without custom templates
+        if (defaultTemplateId) {
+          templateDocId = defaultTemplateId
+          templateSource = 'default'
+          console.log(`📄 Using DEFAULT/GENERIC template for company: ${employee.client_name}`)
+          console.log(`   Default Template ID: ${defaultTemplateId}`)
+        }
+      }
+    } else {
+      console.log('ℹ️ No company name provided, using default template')
+      if (defaultTemplateId) {
+        templateDocId = defaultTemplateId
+        templateSource = 'default'
+        console.log(`📄 Using DEFAULT template (no company): ${defaultTemplateId}`)
       }
     }
 
+    // Final template validation
     if (!templateDocId) {
-      console.error('❌ No template document ID available (neither custom nor default)')
+      console.error('❌ No template document ID available')
+      console.error('   - No custom template found for company')
+      console.error('   - No default template configured in environment')
       throw new Error('No template document ID available (neither custom nor default)')
     }
 
-    console.log(`📄 Final template ID to use: ${templateDocId}`)
+    console.log(`🎯 FINAL TEMPLATE SELECTION:`)
+    console.log(`   Source: ${templateSource.toUpperCase()}`)
+    console.log(`   Company: ${employee.client_name || 'N/A'}`)
+    console.log(`   Template ID: ${templateDocId}`)
+    if (templateDetails) {
+      console.log(`   Template Name: ${templateDetails.template_name}`)
+    }
 
     // Generate the PDF
     console.log(`🎯 Generating PDF with template: ${templateDocId}`)
@@ -125,6 +157,7 @@ serve(async (req) => {
     await createGeneratedAgreementRecord(finalEmployeeId, fileName, publicUrl, processingTime, employee)
     
     console.log(`🎉 Agreement generated successfully in ${processingTime}s`)
+    console.log(`📊 Template Summary: ${templateSource} template used for ${employee.client_name || 'N/A'}`)
     console.log('=== AGREEMENT GENERATION COMPLETED ===')
     
     return new Response(
@@ -132,7 +165,12 @@ serve(async (req) => {
         success: true, 
         pdfUrl: publicUrl,
         processingTime,
-        employeeId: finalEmployeeId
+        employeeId: finalEmployeeId,
+        templateUsed: {
+          source: templateSource,
+          templateId: templateDocId,
+          companyName: employee.client_name
+        }
       }),
       { 
         status: 200, 

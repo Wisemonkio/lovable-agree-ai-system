@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { Loader2, Upload, Eye, ExternalLink } from 'lucide-react'
+import { Loader2, Upload, Eye, ExternalLink, Info, AlertCircle } from 'lucide-react'
 import { CompanyTemplate } from './EmployeeFormTypes'
 
 interface TemplateManagementSectionProps {
@@ -43,11 +43,15 @@ const TemplateManagementSection: React.FC<TemplateManagementSectionProps> = ({
       
       {selectedTemplate ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200">
             <div>
-              <h4 className="font-medium text-gray-900">{selectedTemplate.template_name || 'Custom Template'}</h4>
+              <h4 className="font-medium text-gray-900 flex items-center">
+                <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                {selectedTemplate.template_name || 'Custom Template'}
+              </h4>
               <p className="text-sm text-gray-600">Company: {selectedTemplate.company_name}</p>
               <p className="text-xs text-gray-500">Created: {new Date(selectedTemplate.created_at).toLocaleDateString()}</p>
+              <p className="text-xs text-green-600 font-medium mt-1">✓ Custom template will be used for this company</p>
             </div>
             <div className="flex items-center space-x-2">
               <a
@@ -71,59 +75,81 @@ const TemplateManagementSection: React.FC<TemplateManagementSectionProps> = ({
             </div>
           </div>
         </div>
-      ) : showTemplateForm && (
+      ) : (
         <div className="space-y-4">
-          <div className="p-4 bg-yellow-100 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              No custom template found for <strong>{clientName}</strong>. 
-              You can upload a Google Docs template or use the default template.
-            </p>
+          <div className="p-4 bg-amber-100 border border-amber-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-amber-800 font-medium mb-1">
+                  No custom template found for <strong>{clientName}</strong>
+                </p>
+                <p className="text-xs text-amber-700">
+                  The generic default template will be used for agreement generation. 
+                  You can upload a company-specific template below for customized agreements.
+                </p>
+              </div>
+            </div>
           </div>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Google Docs Template URL *
-              </label>
-              <input
-                type="url"
-                value={templateUrl}
-                onChange={(e) => onTemplateUrlChange(e.target.value)}
-                placeholder="https://docs.google.com/document/d/..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Make sure the document is publicly viewable or shared with appropriate permissions
-              </p>
+          {showTemplateForm && (
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-blue-700">
+                    Upload a Google Docs template to create customized agreements for {clientName}. 
+                    This will replace the generic template for all future agreements for this company.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Google Docs Template URL *
+                  </label>
+                  <input
+                    type="url"
+                    value={templateUrl}
+                    onChange={(e) => onTemplateUrlChange(e.target.value)}
+                    placeholder="https://docs.google.com/document/d/..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Make sure the document is publicly viewable or shared with appropriate permissions
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Template Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => onTemplateNameChange(e.target.value)}
+                    placeholder={`${clientName} Agreement Template`}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={onTemplateUpload}
+                  disabled={!templateUrl || isUploadingTemplate}
+                  className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isUploadingTemplate ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4 mr-2" />
+                  )}
+                  {isUploadingTemplate ? 'Uploading...' : 'Upload Custom Template'}
+                </button>
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Template Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={templateName}
-                onChange={(e) => onTemplateNameChange(e.target.value)}
-                placeholder={`${clientName} Agreement Template`}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-            
-            <button
-              type="button"
-              onClick={onTemplateUpload}
-              disabled={!templateUrl || isUploadingTemplate}
-              className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isUploadingTemplate ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Upload className="w-4 h-4 mr-2" />
-              )}
-              {isUploadingTemplate ? 'Uploading...' : 'Upload Template'}
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>
