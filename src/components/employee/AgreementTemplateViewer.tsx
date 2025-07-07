@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
-import { FileText, ExternalLink, Eye, Edit } from 'lucide-react'
+import { FileText, ExternalLink, Eye, Edit, X } from 'lucide-react'
 
 interface AgreementTemplateViewerProps {
   formData?: any
@@ -18,6 +17,80 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
   
   const openInNewTab = () => {
     window.open(editUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  // Handle escape key press
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
+  const FullScreenModal = () => {
+    if (!isOpen) return null
+
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-white">
+        {/* Header */}
+        <div className="fixed top-0 left-0 right-0 z-[10000] h-16 bg-white border-b shadow-sm flex items-center justify-between px-6">
+          <h2 className="text-lg font-semibold">Agreement Template Preview</h2>
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                variant={viewMode === 'preview' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('preview')}
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                Preview
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === 'edit' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('edit')}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              className="p-2"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Iframe Container */}
+        <div className="pt-16 h-full w-full">
+          <iframe
+            src={viewMode === 'edit' ? editUrl : previewUrl}
+            className="w-full h-full border-0"
+            title="Agreement Template"
+            allow="clipboard-write"
+          />
+        </div>
+      </div>,
+      document.body
+    )
   }
 
   return (
@@ -38,54 +111,16 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
             <ExternalLink className="w-4 h-4" />
             <span>Edit in New Tab</span>
           </Button>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-1"
-              >
-                <Eye className="w-4 h-4" />
-                <span>Preview Template</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none p-0 m-0">
-              <DialogHeader className="absolute top-0 left-0 right-0 z-20 p-4 bg-white border-b shadow-sm">
-                <DialogTitle className="flex items-center justify-between">
-                  <span>Agreement Template Preview</span>
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      variant={viewMode === 'preview' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('preview')}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Preview
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={viewMode === 'edit' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('edit')}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                  </div>
-                </DialogTitle>
-              </DialogHeader>
-              <div className="pt-24 h-full">
-                <iframe
-                  src={viewMode === 'edit' ? editUrl : previewUrl}
-                  className="w-full h-full border-0"
-                  title="Agreement Template"
-                  allow="clipboard-write"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsOpen(true)}
+            className="flex items-center space-x-1"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Preview Template</span>
+          </Button>
         </div>
       </div>
       
@@ -126,6 +161,8 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
           </div>
         </div>
       )}
+      
+      <FullScreenModal />
     </div>
   )
 }
