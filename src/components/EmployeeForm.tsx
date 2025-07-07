@@ -214,6 +214,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
         .insert({
+          user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
           email: formData.email,
