@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { FileText, ExternalLink, Eye, Edit } from 'lucide-react'
+import { FileText, ExternalLink, Eye, Edit, Maximize2, Minimize2 } from 'lucide-react'
 
 interface AgreementTemplateViewerProps {
   formData?: any
@@ -11,6 +11,7 @@ interface AgreementTemplateViewerProps {
 const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formData }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'preview' | 'edit'>('preview')
+  const [isFullscreen, setIsFullscreen] = useState(true)
   
   const templateUrl = 'https://docs.google.com/document/d/1dYiaGQIN_MNlchUvkTg4pe5kzXzRsCnlgyMfX1gO_-E'
   const editUrl = `${templateUrl}/edit?tab=t.0`
@@ -18,6 +19,10 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
   
   const openInNewTab = () => {
     window.open(editUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
   }
 
   return (
@@ -50,11 +55,43 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
                 <span>Preview Template</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-screen h-screen max-w-none p-0">
-              <DialogHeader className="p-4 border-b">
+            <DialogContent 
+              className={`${
+                isFullscreen 
+                  ? 'fixed inset-0 w-screen h-screen max-w-none max-h-none translate-x-0 translate-y-0 rounded-none border-0'
+                  : 'w-[90vw] h-[90vh] max-w-none'
+              } p-0 bg-background flex flex-col`}
+              style={isFullscreen ? {
+                left: '0',
+                top: '0',
+                transform: 'none',
+                width: '100vw',
+                height: '100vh'
+              } : {}}
+            >
+              <DialogHeader className="flex-shrink-0 p-4 border-b bg-background">
                 <DialogTitle className="flex items-center justify-between">
                   <span>Agreement Template Preview</span>
                   <div className="flex space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      className="flex items-center space-x-1"
+                    >
+                      {isFullscreen ? (
+                        <>
+                          <Minimize2 className="w-4 h-4" />
+                          <span>Windowed</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-4 h-4" />
+                          <span>Fullscreen</span>
+                        </>
+                      )}
+                    </Button>
                     <Button
                       type="button"
                       variant={viewMode === 'preview' ? 'default' : 'outline'}
@@ -76,12 +113,13 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
                   </div>
                 </DialogTitle>
               </DialogHeader>
-              <div className="flex-1 h-full">
+              <div className="flex-1 overflow-hidden">
                 <iframe
                   src={viewMode === 'edit' ? editUrl : previewUrl}
                   className="w-full h-full border-0"
                   title="Agreement Template"
                   allow="clipboard-write"
+                  style={{ minHeight: '100%' }}
                 />
               </div>
             </DialogContent>
