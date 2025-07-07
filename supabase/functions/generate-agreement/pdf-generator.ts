@@ -1,6 +1,9 @@
 
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1"
 import type { Employee } from './types.ts'
+import { fetchGoogleDocsContent, replacePlaceholdersInDoc, exportDocAsPDF, createDocumentCopy, deleteDocument } from './google-docs.ts'
+import { replacePlaceholders } from './placeholders.ts'
+import { getDefaultTemplate } from './default-template.ts'
 
 export const generatePDF = (content: string, employee: Employee): Uint8Array => {
   console.log('Generating PDF for employee:', employee.first_name, employee.last_name)
@@ -103,4 +106,63 @@ export const generatePDF = (content: string, employee: Employee): Uint8Array => 
   
   console.log('PDF generation completed, final yPosition:', yPosition)
   return doc.output('arraybuffer')
+}
+
+export const generateAgreementPDF = async (employee: Employee, templateDocId?: string): Promise<Uint8Array> => {
+  console.log('Starting PDF generation for employee:', employee.first_name, employee.last_name)
+  console.log('Template Doc ID:', templateDocId)
+  
+  try {
+    // If we have a Google Docs template ID, use the Google Docs workflow
+    if (templateDocId) {
+      console.log('Using Google Docs template workflow')
+      
+      try {
+        // Create a copy of the template document
+        const tempDocTitle = `Agreement_${employee.first_name}_${employee.last_name}_${Date.now()}`
+        const tempDocId = await createDocumentCopy(templateDocId, tempDocTitle)
+        console.log('Created temporary document copy:', tempDocId)
+        
+        // Replace placeholders in the temporary document
+        await replacePlaceholdersInDoc(tempDocId, employee)
+        console.log('Placeholders replaced successfully')
+        
+        // Export the document as PDF
+        const pdfBuffer = await exportDocAsPDF(tempDocId)
+        console.log('PDF exported successfully from Google Docs')
+        
+        // Clean up: delete the temporary document
+        await deleteDocument(tempDocId)
+        console.log('Temporary document deleted successfully')
+        
+        return pdfBuffer
+        
+      } catch (googleDocsError) {
+        console.error('Google Docs workflow failed:', googleDocsError)
+        console.log('Falling back to default template')
+        // Fall through to default template workflow
+      }
+    }
+    
+    // Use default template workflow (either no templateDocId or Google Docs failed)
+    console.log('Using default template workflow')
+    
+    // Get the default hardcoded template
+    const defaultTemplate = getDefaultTemplate()
+    console.log('Retrieved default template')
+    
+    // Replace placeholders in the template
+    const processedContent = replacePlaceholders(defaultTemplate, employee)
+    console.log('Placeholders replaced in default template')
+    
+    // Generate PDF from the processed content
+    const pdfBuffer = generatePDF(processedContent, employee)
+    console.log('PDF generated from default template')
+    
+    return pdfBuffer
+    
+  } catch (error) {
+    console.error('Error in generateAgreementPDF:', error)
+    throw new Error(`Failed to generate agreement PDF: ${error.message}`)
+  }
 }
