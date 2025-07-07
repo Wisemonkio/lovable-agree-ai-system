@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -170,13 +169,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
     }
   }
   
-  // Calculate salary breakdown
+  // Calculate salary breakdown - removed yfbp and mfbp since they're generated columns
   const calculateSalaryBreakdown = (annualGross: number) => {
     const annualBasic = annualGross / 2
     const annualHra = annualBasic / 2
     const annualLta = annualBasic / 5
-    const yfbp = annualGross <= 1440000 ? 0 : 169392
-    const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - yfbp - 21600
+    const annualSpecialAllowance = annualGross - annualBasic - annualHra - annualLta - 21600
     
     return {
       monthly_gross: annualGross / 12,
@@ -187,9 +185,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       monthly_basic: annualBasic / 12,
       monthly_hra: annualHra / 12,
       monthly_lta: annualLta / 12,
-      monthly_special_allowance: annualSpecialAllowance / 12,
-      yfbp,
-      mfbp: yfbp / 12
+      monthly_special_allowance: annualSpecialAllowance / 12
+      // Removed yfbp and mfbp as they are generated columns
     }
   }
 
