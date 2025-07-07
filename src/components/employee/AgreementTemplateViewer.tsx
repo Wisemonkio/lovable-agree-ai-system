@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -50,7 +51,7 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
               </Button>
             </DialogTrigger>
             <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none p-0 m-0">
-              <DialogHeader className="absolute top-0 left-0 right-0 z-10 p-4 bg-white border-b shadow-sm">
+              <DialogHeader className="absolute top-0 left-0 right-0 z-20 p-4 bg-white border-b shadow-sm">
                 <DialogTitle className="flex items-center justify-between">
                   <span>Agreement Template Preview</span>
                   <div className="flex space-x-2">
@@ -75,7 +76,7 @@ const AgreementTemplateViewer: React.FC<AgreementTemplateViewerProps> = ({ formD
                   </div>
                 </DialogTitle>
               </DialogHeader>
-              <div className="pt-16 h-full">
+              <div className="pt-24 h-full">
                 <iframe
                   src={viewMode === 'edit' ? editUrl : previewUrl}
                   className="w-full h-full border-0"
