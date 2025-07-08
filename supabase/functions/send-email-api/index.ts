@@ -1,163 +1,197 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// JWT helper functions
-function base64UrlEncode(str: string): string {
-  return btoa(str)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
+interface EmailRequest {
+  to: string
+  subject: string
+  html?: string
+  text?: string
 }
 
-function createJWT(email: string, privateKey: string, scope: string): string {
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT'
+async function getGmailAccessToken(): Promise<string> {
+  const clientEmail = Deno.env.get('GOOGLE_CLIENT_EMAIL')
+  const privateKey = Deno.env.get('GOOGLE_PRIVATE_KEY')?.replace(/\\n/g, '\n')
+  
+  console.log('🔐 Checking Google credentials...')
+  console.log('Client Email set:', !!clientEmail)
+  console.log('Private Key set:', !!privateKey)
+  
+  if (!clientEmail || !privateKey) {
+    throw new Error('Missing Google credentials: GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY required')
   }
 
   const now = Math.floor(Date.now() / 1000)
+  
   const payload = {
-    iss: email,
-    scope: scope,
+    iss: clientEmail,
+    scope: 'https://www.googleapis.com/auth/gmail.send',
     aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now
+    exp: getNumericDate(60 * 60), // 1 hour
+    iat: now,
   }
 
-  const encodedHeader = base64UrlEncode(JSON.stringify(header))
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload))
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`
-
-  // Import the private key and sign
-  return unsignedToken // Note: This is simplified - in production you'd need proper RSA signing
-}
-
-async function getAccessToken(): Promise<string> {
-  const clientEmail = Deno.env.get('GOOGLE_CLIENT_EMAIL')
-  const privateKey = Deno.env.get('GOOGLE_PRIVATE_KEY')
+  console.log('🔑 Creating JWT...')
   
-  if (!clientEmail || !privateKey) {
-    throw new Error('Missing Google credentials')
-  }
-
-  const scope = 'https://www.googleapis.com/auth/gmail.send'
-  
-  // For now, we'll use a simplified approach
-  // In production, you'd need proper JWT signing with RSA
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: createJWT(clientEmail, privateKey, scope)
-    })
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to get access token: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  return data.access_token
-}
-
-async function sendEmailViaGmail(to: string, subject: string, html: string, text: string): Promise<any> {
   try {
-    console.log(`📧 Sending email via Gmail API to: ${to}`)
-    
-    const accessToken = await getAccessToken()
-    
-    // Create the email message
-    const emailMessage = [
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      'Content-Type: text/html; charset=utf-8',
-      'MIME-Version: 1.0',
-      '',
-      html
-    ].join('\n')
+    const jwt = await create(
+      { alg: "RS256", typ: "JWT" },
+      payload,
+      privateKey
+    )
 
-    // Encode the message in base64
-    const encodedMessage = btoa(emailMessage)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '')
+    console.log('📝 JWT created, requesting access token...')
 
-    // Send via Gmail API
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        raw: encodedMessage
-      })
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
     })
 
+    const data = await response.json()
+    
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Gmail API error: ${response.statusText} - ${errorText}`)
+      console.error('❌ Token request failed:', data)
+      throw new Error(`Failed to get access token: ${data.error} - ${data.error_description}`)
     }
 
-    const result = await response.json()
-    console.log('✅ Email sent successfully via Gmail:', result)
-    return result
-
+    console.log('✅ Access token obtained successfully')
+    return data.access_token
   } catch (error) {
-    console.error('❌ Gmail sending failed:', error)
-    throw error
+    console.error('💥 JWT/Token error:', error)
+    throw new Error(`JWT creation failed: ${error.message}`)
   }
+}
+
+function createEmailMessage(to: string, subject: string, html?: string, text?: string): string {
+  const fromEmail = Deno.env.get('GOOGLE_CLIENT_EMAIL')
+  
+  console.log('📝 Creating email message...')
+  
+  let message = `From: ${fromEmail}\r\n`
+  message += `To: ${to}\r\n`
+  message += `Subject: ${subject}\r\n`
+  message += `MIME-Version: 1.0\r\n`
+  
+  if (html && text) {
+    const boundary = `boundary_${Date.now()}`
+    message += `Content-Type: multipart/alternative; boundary=${boundary}\r\n\r\n`
+    message += `--${boundary}\r\n`
+    message += `Content-Type: text/plain; charset=UTF-8\r\n\r\n`
+    message += `${text}\r\n\r\n`
+    message += `--${boundary}\r\n`
+    message += `Content-Type: text/html; charset=UTF-8\r\n\r\n`
+    message += `${html}\r\n\r\n`
+    message += `--${boundary}--`
+  } else if (html) {
+    message += `Content-Type: text/html; charset=UTF-8\r\n\r\n`
+    message += html
+  } else {
+    message += `Content-Type: text/plain; charset=UTF-8\r\n\r\n`
+    message += text
+  }
+
+  return btoa(message).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
 serve(async (req) => {
+  console.log('📧 Email API function called, method:', req.method)
+
   if (req.method === 'OPTIONS') {
+    console.log('⚡ Handling CORS preflight request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const body = await req.json()
-    const { to, subject, html, text } = body
-    
-    console.log('📧 Email send request received:', { to, subject })
-    
-    if (!to || !subject) {
-      throw new Error('Missing required fields: to, subject')
+    console.log('📬 Processing Gmail API email request...')
+    const { to, subject, html, text }: EmailRequest = await req.json()
+
+    console.log('📧 Email request details:')
+    console.log('  To:', to)
+    console.log('  Subject:', subject)
+    console.log('  Has HTML:', !!html)
+    console.log('  Has Text:', !!text)
+
+    if (!to || !subject || (!html && !text)) {
+      console.error('❌ Missing required fields')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required fields: to, subject, and html or text',
+          received: { to: !!to, subject: !!subject, html: !!html, text: !!text }
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    // Send email via Gmail API
-    const result = await sendEmailViaGmail(to, subject, html || text, text || html)
+    console.log('🔑 Getting Gmail access token...')
+    const accessToken = await getGmailAccessToken()
     
+    console.log('📝 Creating email message...')
+    const encodedMessage = createEmailMessage(to, subject, html, text)
+
+    console.log('📤 Sending email via Gmail API...')
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        raw: encodedMessage,
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      console.error('❌ Gmail API error:', result)
+      throw new Error(`Gmail API error: ${result.error?.message || 'Unknown error'}`)
+    }
+
+    console.log('✅ Email sent successfully via Gmail API:', result.id)
+
     return new Response(
       JSON.stringify({ 
-        success: true, 
+        message: 'Email sent successfully',
         messageId: result.id,
-        message: 'Email sent successfully' 
+        timestamp: new Date().toISOString()
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
   } catch (error) {
-    console.error('💥 Error in send-email-api:', error)
+    console.error('💥 Error sending email via Gmail API:', error)
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    })
     
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: error.message || 'Failed to send email'
+        error: 'Failed to send email via Gmail API', 
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
