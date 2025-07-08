@@ -14,13 +14,341 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      company_agreement_templates: {
+        Row: {
+          company_name: string
+          created_at: string
+          created_by: string
+          google_doc_id: string
+          google_doc_url: string
+          id: string
+          is_active: boolean
+          template_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          created_by?: string
+          google_doc_id: string
+          google_doc_url: string
+          id?: string
+          is_active?: boolean
+          template_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          created_by?: string
+          google_doc_id?: string
+          google_doc_url?: string
+          id?: string
+          is_active?: boolean
+          template_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_details: {
+        Row: {
+          aadhar: string | null
+          address_line1: string | null
+          address_line2: string | null
+          age: number | null
+          agreement_status: string | null
+          annual_basic: number | null
+          annual_gross_salary: number
+          annual_hra: number | null
+          annual_lta: number | null
+          annual_special_allowance: number | null
+          bonus: string | null
+          city: string | null
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          doc_url: string | null
+          email: string
+          fathers_name: string | null
+          first_name: string
+          gender: string | null
+          id: string
+          job_description: string | null
+          job_title: string
+          joining_date: string
+          last_date: string | null
+          last_name: string
+          manager_details: string | null
+          mfbp: number | null
+          monthly_basic: number | null
+          monthly_gross: number | null
+          monthly_hra: number | null
+          monthly_lta: number | null
+          monthly_special_allowance: number | null
+          pdf_download_url: string | null
+          pdf_url: string | null
+          pincode: string | null
+          place: string | null
+          processing_completed_at: string | null
+          processing_started_at: string | null
+          signing_completed_at: string | null
+          signing_sent_at: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          yfbp: number | null
+          zoho_sign_document_id: string | null
+          zoho_sign_error: string | null
+          zoho_sign_request_id: string | null
+          zoho_sign_status: string | null
+        }
+        Insert: {
+          aadhar?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          age?: number | null
+          agreement_status?: string | null
+          annual_basic?: number | null
+          annual_gross_salary: number
+          annual_hra?: number | null
+          annual_lta?: number | null
+          annual_special_allowance?: number | null
+          bonus?: string | null
+          city?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          doc_url?: string | null
+          email: string
+          fathers_name?: string | null
+          first_name: string
+          gender?: string | null
+          id?: string
+          job_description?: string | null
+          job_title: string
+          joining_date: string
+          last_date?: string | null
+          last_name: string
+          manager_details?: string | null
+          mfbp?: number | null
+          monthly_basic?: number | null
+          monthly_gross?: number | null
+          monthly_hra?: number | null
+          monthly_lta?: number | null
+          monthly_special_allowance?: number | null
+          pdf_download_url?: string | null
+          pdf_url?: string | null
+          pincode?: string | null
+          place?: string | null
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          yfbp?: number | null
+          zoho_sign_document_id?: string | null
+          zoho_sign_error?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Update: {
+          aadhar?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          age?: number | null
+          agreement_status?: string | null
+          annual_basic?: number | null
+          annual_gross_salary?: number
+          annual_hra?: number | null
+          annual_lta?: number | null
+          annual_special_allowance?: number | null
+          bonus?: string | null
+          city?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          doc_url?: string | null
+          email?: string
+          fathers_name?: string | null
+          first_name?: string
+          gender?: string | null
+          id?: string
+          job_description?: string | null
+          job_title?: string
+          joining_date?: string
+          last_date?: string | null
+          last_name?: string
+          manager_details?: string | null
+          mfbp?: number | null
+          monthly_basic?: number | null
+          monthly_gross?: number | null
+          monthly_hra?: number | null
+          monthly_lta?: number | null
+          monthly_special_allowance?: number | null
+          pdf_download_url?: string | null
+          pdf_url?: string | null
+          pincode?: string | null
+          place?: string | null
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          yfbp?: number | null
+          zoho_sign_document_id?: string | null
+          zoho_sign_error?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Relationships: []
+      }
+      generated_agreements: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          file_name: string | null
+          generation_status: string | null
+          google_doc_id: string | null
+          google_doc_url: string | null
+          id: string
+          pdf_download_url: string | null
+          pdf_file_id: string | null
+          pdf_preview_url: string | null
+          placeholders_replaced: Json | null
+          processing_time_seconds: number | null
+          salary_breakdown: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          file_name?: string | null
+          generation_status?: string | null
+          google_doc_id?: string | null
+          google_doc_url?: string | null
+          id?: string
+          pdf_download_url?: string | null
+          pdf_file_id?: string | null
+          pdf_preview_url?: string | null
+          placeholders_replaced?: Json | null
+          processing_time_seconds?: number | null
+          salary_breakdown?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          file_name?: string | null
+          generation_status?: string | null
+          google_doc_id?: string | null
+          google_doc_url?: string | null
+          id?: string
+          pdf_download_url?: string | null
+          pdf_file_id?: string | null
+          pdf_preview_url?: string | null
+          placeholders_replaced?: Json | null
+          processing_time_seconds?: number | null
+          salary_breakdown?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_agreements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_agreements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_signing_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      employee_signing_status: {
+        Row: {
+          display_status: string | null
+          email: string | null
+          first_name: string | null
+          has_pdf: boolean | null
+          id: string | null
+          last_name: string | null
+          pdf_url: string | null
+          sent_for_signing: boolean | null
+          signing_completed_at: string | null
+          signing_sent_at: string | null
+          zoho_sign_request_id: string | null
+          zoho_sign_status: string | null
+        }
+        Insert: {
+          display_status?: never
+          email?: string | null
+          first_name?: string | null
+          has_pdf?: never
+          id?: string | null
+          last_name?: string | null
+          pdf_url?: string | null
+          sent_for_signing?: never
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Update: {
+          display_status?: never
+          email?: string | null
+          first_name?: string | null
+          has_pdf?: never
+          id?: string | null
+          last_name?: string | null
+          pdf_url?: string | null
+          sent_for_signing?: never
+          signing_completed_at?: string | null
+          signing_sent_at?: string | null
+          zoho_sign_request_id?: string | null
+          zoho_sign_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      verify_agreement_access: {
+        Args: { employee_record_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
