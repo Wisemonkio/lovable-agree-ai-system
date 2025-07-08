@@ -116,6 +116,16 @@ serve(async (req) => {
   const startTime = Date.now()
   console.log('=== AGREEMENT GENERATION STARTED ===')
   
+  // Verify we're connecting to the correct Supabase project
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  console.log('🔗 Supabase URL:', supabaseUrl)
+  console.log('📍 Expected project: bdprgxdvzjhxsthkgnbs')
+  if (supabaseUrl && supabaseUrl.includes('bdprgxdvzjhxsthkgnbs')) {
+    console.log('✅ Connected to correct Supabase project')
+  } else {
+    console.warn('⚠️ WARNING: Not connected to expected project bdprgxdvzjhxsthkgnbs')
+  }
+  
   try {
     const body = await req.json()
     const { employeeId, employee_id } = body

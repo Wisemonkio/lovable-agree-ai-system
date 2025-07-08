@@ -17,6 +17,13 @@ interface EmailRequest {
 
 serve(async (req) => {
   console.log('📧 SMTP Email function called, method:', req.method)
+  
+  // Verify we're on the correct Supabase project
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  console.log('🔗 Connected to Supabase URL:', supabaseUrl)
+  if (supabaseUrl && supabaseUrl.includes('bdprgxdvzjhxsthkgnbs')) {
+    console.log('✅ Email function connected to correct project: bdprgxdvzjhxsthkgnbs')
+  }
 
   // Handle CORS
   if (req.method === 'OPTIONS') {
