@@ -1,4 +1,4 @@
-// SMTP version - much simpler and more reliable
+// Re-deployed: SMTP email API edge function - much simpler and more reliable
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
