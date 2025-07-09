@@ -57,10 +57,10 @@ export type Database = {
           address_line2: string | null
           age: number | null
           agreement_status: string | null
-          annual_basic: number | null
+          annual_basic: number
           annual_gross_salary: number
-          annual_hra: number | null
-          annual_lta: number | null
+          annual_hra: number
+          annual_lta: number
           annual_special_allowance: number | null
           bonus: string | null
           city: string | null
@@ -80,10 +80,10 @@ export type Database = {
           last_name: string
           manager_details: string | null
           mfbp: number | null
-          monthly_basic: number | null
-          monthly_gross: number | null
-          monthly_hra: number | null
-          monthly_lta: number | null
+          monthly_basic: number
+          monthly_gross: number
+          monthly_hra: number
+          monthly_lta: number
           monthly_special_allowance: number | null
           pdf_download_url: string | null
           pdf_url: string | null
@@ -108,10 +108,10 @@ export type Database = {
           address_line2?: string | null
           age?: number | null
           agreement_status?: string | null
-          annual_basic?: number | null
+          annual_basic: number
           annual_gross_salary: number
-          annual_hra?: number | null
-          annual_lta?: number | null
+          annual_hra: number
+          annual_lta: number
           annual_special_allowance?: number | null
           bonus?: string | null
           city?: string | null
@@ -131,10 +131,10 @@ export type Database = {
           last_name: string
           manager_details?: string | null
           mfbp?: number | null
-          monthly_basic?: number | null
-          monthly_gross?: number | null
-          monthly_hra?: number | null
-          monthly_lta?: number | null
+          monthly_basic: number
+          monthly_gross: number
+          monthly_hra: number
+          monthly_lta: number
           monthly_special_allowance?: number | null
           pdf_download_url?: string | null
           pdf_url?: string | null
@@ -159,10 +159,10 @@ export type Database = {
           address_line2?: string | null
           age?: number | null
           agreement_status?: string | null
-          annual_basic?: number | null
+          annual_basic?: number
           annual_gross_salary?: number
-          annual_hra?: number | null
-          annual_lta?: number | null
+          annual_hra?: number
+          annual_lta?: number
           annual_special_allowance?: number | null
           bonus?: string | null
           city?: string | null
@@ -182,10 +182,10 @@ export type Database = {
           last_name?: string
           manager_details?: string | null
           mfbp?: number | null
-          monthly_basic?: number | null
-          monthly_gross?: number | null
-          monthly_hra?: number | null
-          monthly_lta?: number | null
+          monthly_basic?: number
+          monthly_gross?: number
+          monthly_hra?: number
+          monthly_lta?: number
           monthly_special_allowance?: number | null
           pdf_download_url?: string | null
           pdf_url?: string | null
