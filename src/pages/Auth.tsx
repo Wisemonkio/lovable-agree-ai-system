@@ -15,6 +15,8 @@ const Auth: React.FC = () => {
   const { signIn, signUp, signInWithGoogle, user, loading } = useAuth()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleSignInLoading, setIsGoogleSignInLoading] = useState(false)
+  const [isGoogleSignUpLoading, setIsGoogleSignUpLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -90,15 +92,20 @@ const Auth: React.FC = () => {
     setIsLoading(false)
   }
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true)
+  const handleGoogleSignIn = async (type: 'signin' | 'signup') => {
+    if (type === 'signin') {
+      setIsGoogleSignInLoading(true)
+    } else {
+      setIsGoogleSignUpLoading(true)
+    }
     setError(null)
 
     const { error } = await signInWithGoogle()
     
     if (error) {
       setError(error.message)
-      setIsLoading(false)
+      setIsGoogleSignInLoading(false)
+      setIsGoogleSignUpLoading(false)
     }
     // Note: Don't set loading to false here - the redirect will happen
   }
@@ -173,10 +180,10 @@ const Auth: React.FC = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full" 
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
+                  onClick={() => handleGoogleSignIn('signin')}
+                  disabled={isGoogleSignInLoading}
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (
+                  {isGoogleSignInLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (
                     <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                       <path
                         fill="currentColor"
@@ -268,10 +275,10 @@ const Auth: React.FC = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full" 
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
+                  onClick={() => handleGoogleSignIn('signup')}
+                  disabled={isGoogleSignUpLoading}
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (
+                  {isGoogleSignUpLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (
                     <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                       <path
                         fill="currentColor"
