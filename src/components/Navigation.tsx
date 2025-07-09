@@ -2,11 +2,11 @@
 import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { Users, UserPlus, LogOut, User } from 'lucide-react'
+import { Users, UserPlus, LogOut, User, UserCheck } from 'lucide-react'
 
 interface NavigationProps {
-  currentView: 'list' | 'add'
-  setCurrentView: (view: 'list' | 'add') => void
+  currentView: 'list' | 'add' | 'onboarded'
+  setCurrentView: (view: 'list' | 'add' | 'onboarded') => void
 }
 
 const Navigation: React.FC<NavigationProps> = ({ currentView, setCurrentView }) => {
@@ -42,6 +42,15 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, setCurrentView }) 
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Add Employee</span>
+              </Button>
+              
+              <Button
+                variant={currentView === 'onboarded' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView('onboarded')}
+                className="flex items-center space-x-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Onboarded</span>
               </Button>
             </div>
           </div>
