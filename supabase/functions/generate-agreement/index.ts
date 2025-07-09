@@ -119,11 +119,11 @@ serve(async (req) => {
   // Verify we're connecting to the correct Supabase project
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   console.log('🔗 Supabase URL:', supabaseUrl)
-  console.log('📍 Expected project: bdprgxdvzjhxsthkgnbs')
-  if (supabaseUrl && supabaseUrl.includes('bdprgxdvzjhxsthkgnbs')) {
+  console.log('📍 Expected project: kzejmozxbhzkrbfmwmnx')
+  if (supabaseUrl && supabaseUrl.includes('kzejmozxbhzkrbfmwmnx')) {
     console.log('✅ Connected to correct Supabase project')
   } else {
-    console.warn('⚠️ WARNING: Not connected to expected project bdprgxdvzjhxsthkgnbs')
+    console.warn('⚠️ WARNING: Not connected to expected project kzejmozxbhzkrbfmwmnx')
   }
   
   try {

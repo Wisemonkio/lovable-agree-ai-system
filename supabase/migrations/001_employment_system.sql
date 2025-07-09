@@ -91,7 +91,7 @@ DECLARE
   payload JSONB;
 BEGIN
   -- Set the Edge Function URL for current project
-  edge_function_url := 'https://bdprgxdvzjhxsthkgnbs.supabase.co/functions/v1/generate-agreement';
+  edge_function_url := 'https://kzejmozxbhzkrbfmwmnx.supabase.co/functions/v1/generate-agreement';
   
   -- Create payload
   payload := jsonb_build_object('employee_id', NEW.id);
