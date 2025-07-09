@@ -1,7 +1,10 @@
-// Re-deployed: SMTP email API edge function - much simpler and more reliable
+// =============================================================================
+// SUPABASE EDGE FUNCTION: send-email-api
+// File: supabase/functions/send-email-api/index.ts
+// Purpose: Send emails via Resend API for employee agreement notifications
+// =============================================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,23 +19,16 @@ interface EmailRequest {
 }
 
 serve(async (req) => {
-  console.log('📧 SMTP Email function called, method:', req.method)
-  
-  // Verify we're on the correct Supabase project
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  console.log('🔗 Connected to Supabase URL:', supabaseUrl)
-  if (supabaseUrl && supabaseUrl.includes('bdprgxdvzjhxsthkgnbs')) {
-    console.log('✅ Email function connected to correct project: bdprgxdvzjhxsthkgnbs')
-  }
+  console.log('📧 Resend Email function called, method:', req.method)
 
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log('⚡ Handling CORS preflight request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('📬 Processing SMTP email request...')
+    console.log('📬 Processing Resend email request...')
     const { to, subject, html, text }: EmailRequest = await req.json()
 
     console.log('📧 Email request details:')
@@ -57,27 +53,24 @@ serve(async (req) => {
     }
 
     // Get environment variables
-    const gmailUser = Deno.env.get('GMAIL_USER')
-    const gmailAppPassword = Deno.env.get('GMAIL_APP_PASSWORD')
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    const fromEmail = Deno.env.get('FROM_EMAIL')
 
     console.log('🔐 Environment check:')
-    console.log('  GMAIL_USER set:', !!gmailUser)
-    console.log('  GMAIL_USER value:', gmailUser || 'NOT SET')
-    console.log('  GMAIL_APP_PASSWORD set:', !!gmailAppPassword)
-    console.log('  GMAIL_APP_PASSWORD length:', gmailAppPassword?.length || 0)
+    console.log('  RESEND_API_KEY set:', !!resendApiKey)
+    console.log('  RESEND_API_KEY prefix:', resendApiKey?.substring(0, 3) || 'NOT SET')
+    console.log('  FROM_EMAIL set:', !!fromEmail)
+    console.log('  FROM_EMAIL value:', fromEmail || 'NOT SET')
 
-    if (!gmailUser || !gmailAppPassword) {
-      console.error('❌ Gmail credentials not configured')
+    if (!resendApiKey) {
+      console.error('❌ Resend API key not configured')
       return new Response(
         JSON.stringify({ 
-          error: 'Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD secrets.',
-          missing: {
-            GMAIL_USER: !gmailUser,
-            GMAIL_APP_PASSWORD: !gmailAppPassword
-          },
+          error: 'Resend API key not configured. Please set RESEND_API_KEY secret.',
           help: {
-            GMAIL_USER: "Set your Gmail address",
-            GMAIL_APP_PASSWORD: "Generate an App Password from Google Account settings (16 characters)"
+            step1: "Sign up at resend.com",
+            step2: "Get your API key from the dashboard",
+            step3: "Run: supabase secrets set RESEND_API_KEY=re_your_key_here"
           }
         }),
         { 
@@ -87,46 +80,91 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔌 Creating SMTP client...')
-    
-    // Create SMTP client
-    const client = new SmtpClient()
+    if (!fromEmail) {
+      console.error('❌ FROM_EMAIL not configured')
+      return new Response(
+        JSON.stringify({ 
+          error: 'FROM_EMAIL not configured. Please set FROM_EMAIL secret.',
+          help: {
+            option1: "Use your domain: supabase secrets set FROM_EMAIL=noreply@yourdomain.com",
+            option2: "Use Resend default: supabase secrets set FROM_EMAIL=onboarding@resend.dev"
+          }
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
-    console.log('🔗 Connecting to Gmail SMTP server...')
+    console.log('📤 Sending email via Resend API...')
     
-    // Connect to Gmail SMTP server
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 587,
-      username: gmailUser,
-      password: gmailAppPassword,
-    })
-
-    console.log('✅ Connected to Gmail SMTP successfully')
-    console.log('📤 Sending email...')
-
-    // Prepare email content
-    const emailContent = text || (html ? html.replace(/<[^>]*>/g, '') : '')
-    
-    // Send email
-    await client.send({
-      from: gmailUser,
-      to: to,
+    // Prepare email data for Resend
+    const emailData: any = {
+      from: fromEmail,
+      to: [to],
       subject: subject,
-      content: emailContent,
-      html: html || undefined,
+    }
+
+    // Add content based on what's provided
+    if (html && text) {
+      emailData.html = html
+      emailData.text = text
+    } else if (html) {
+      emailData.html = html
+      // Generate text version from HTML for better deliverability
+      emailData.text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+    } else {
+      emailData.text = text
+    }
+
+    console.log('📋 Email payload prepared:', {
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject,
+      hasHtml: !!emailData.html,
+      hasText: !!emailData.text
     })
 
-    console.log('📧 Email sent successfully via SMTP')
+    // Send email via Resend API
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
+    })
 
-    // Close connection
-    await client.close()
-    console.log('🔌 SMTP connection closed')
+    const result = await response.json()
+
+    if (!response.ok) {
+      console.error('❌ Resend API error:', result)
+      console.error('❌ Response status:', response.status)
+      console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      // Provide helpful error messages
+      let helpfulMessage = result.message || 'Unknown error'
+      if (response.status === 401) {
+        helpfulMessage = 'Invalid API key. Please check your RESEND_API_KEY secret.'
+      } else if (response.status === 403) {
+        helpfulMessage = 'API key doesn\'t have permission to send emails.'
+      } else if (response.status === 422) {
+        helpfulMessage = `Validation error: ${result.message}`
+      }
+      
+      throw new Error(helpfulMessage)
+    }
+
+    console.log('✅ Email sent successfully via Resend!')
+    console.log('📧 Email ID:', result.id)
 
     return new Response(
       JSON.stringify({ 
-        message: 'Email sent successfully via SMTP',
-        from: gmailUser,
+        success: true,
+        message: 'Email sent successfully via Resend',
+        emailId: result.id,
+        from: fromEmail,
         to: to,
         subject: subject,
         timestamp: new Date().toISOString()
@@ -138,26 +176,18 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('💥 Error sending email via SMTP:', error)
+    console.error('💥 Error sending email via Resend:', error)
     console.error('Error details:', {
       name: error.name,
       message: error.message,
       stack: error.stack
     })
     
-    // Provide helpful error messages
-    let helpfulMessage = error.message
-    if (error.message.includes('Authentication failed')) {
-      helpfulMessage = 'Gmail authentication failed. Make sure you are using an App Password (16 characters), not your regular Gmail password.'
-    } else if (error.message.includes('Connection refused')) {
-      helpfulMessage = 'Cannot connect to Gmail SMTP server. Check your network connection.'
-    }
-    
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to send email via SMTP', 
-        details: helpfulMessage,
-        originalError: error.message,
+        success: false,
+        error: 'Failed to send email via Resend', 
+        details: error.message,
         timestamp: new Date().toISOString()
       }),
       {
