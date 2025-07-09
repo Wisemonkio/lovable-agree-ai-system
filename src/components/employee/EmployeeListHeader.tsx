@@ -6,18 +6,22 @@ interface EmployeeListHeaderProps {
   employeeCount: number
   onRefresh: () => void
   refreshing: boolean
+  title?: string
+  subtitle?: string
 }
 
 const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({
   employeeCount,
   onRefresh,
-  refreshing
+  refreshing,
+  title = "Employees",
+  subtitle = "Manage employee information and employment agreements"
 }) => {
   return (
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Employee Directory</h1>
-        <p className="text-gray-600 mt-1">Manage employees and their employment agreements</p>
+        <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+        <p className="text-gray-600 mt-1">{subtitle}</p>
       </div>
       <div className="flex items-center space-x-4">
         <button

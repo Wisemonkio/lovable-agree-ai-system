@@ -1,4 +1,5 @@
 
+// Re-deployed: Agreement generation edge function
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { Employee } from './types.ts'
@@ -114,6 +115,16 @@ serve(async (req) => {
 
   const startTime = Date.now()
   console.log('=== AGREEMENT GENERATION STARTED ===')
+  
+  // Verify we're connecting to the correct Supabase project
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  console.log('🔗 Supabase URL:', supabaseUrl)
+  console.log('📍 Expected project: bdprgxdvzjhxsthkgnbs')
+  if (supabaseUrl && supabaseUrl.includes('bdprgxdvzjhxsthkgnbs')) {
+    console.log('✅ Connected to correct Supabase project')
+  } else {
+    console.warn('⚠️ WARNING: Not connected to expected project bdprgxdvzjhxsthkgnbs')
+  }
   
   try {
     const body = await req.json()
