@@ -74,8 +74,8 @@ redirect_uri = "http://localhost:54321/auth/v1/callback"
 
 [auth.external.google]
 enabled = false
-client_id = "env(GOOGLE_CLIENT_ID)"
-secret = "env(GOOGLE_SECRET)"
+#client_id = "env(GOOGLE_CLIENT_ID)"
+#secret = "env(GOOGLE_SECRET)"
 
 # Storage configuration
 [storage]
