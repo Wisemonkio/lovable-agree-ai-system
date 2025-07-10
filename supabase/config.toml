@@ -1,1 +1,151 @@
+# Supabase configuration file
+# This file configures Supabase CLI behavior and service settings
+
+# Your project reference ID
 project_id = "kzejmozxbhzkrbfmwmnx"
+
+# Database configuration
+[db]
+# Directory where database migrations are stored
+migrations_dir = "supabase/migrations"
+# Database port for local development
+port = 54322
+# Major version of PostgreSQL to use
+major_version = 15
+
+# Seed data configuration
+[db.seed]
+# SQL files to run when seeding the database
+sql_paths = ["./supabase/seed.sql"]
+
+# API configuration
+[api]
+# Enable the API service
+enabled = true
+# Port for the API service
+port = 54321
+# Schemas exposed via the API
+schemas = ["public", "graphql_public"]
+# Extra search path for schemas
+extra_search_path = ["public", "extensions"]
+# Maximum number of rows returned by a single query
+max_rows = 1000
+
+# Authentication configuration
+[auth]
+# Enable authentication service
+enabled = true
+# Port for the auth service
+port = 9999
+# Site URL (your app's URL)
+site_url = "http://localhost:3000"
+# Additional redirect URLs
+additional_redirect_urls = ["https://yourdomain.com"]
+# JWT expiry time in seconds (1 hour)
+jwt_expiry = 3600
+# Enable manual linking of accounts
+enable_manual_linking = false
+
+# Email authentication settings
+[auth.email]
+# Allow users to sign up with email
+enable_signup = true
+# Require email confirmation for signup
+enable_confirmations = true
+# Require confirmation for email changes
+double_confirm_changes = true
+# Enable secure email change (recommended)
+secure_email_change_enabled = true
+
+# SMS authentication settings
+[auth.sms]
+# Enable SMS authentication
+enable_signup = false
+# Enable phone confirmations
+enable_confirmations = false
+
+# External OAuth providers
+[auth.external.github]
+enabled = true
+client_id = "env(GITHUB_CLIENT_ID)"
+secret = "env(GITHUB_SECRET)"
+# Optional: redirect URL
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+
+[auth.external.google]
+enabled = false
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_SECRET)"
+
+# Storage configuration
+[storage]
+# Enable storage service
+enabled = true
+# Port for storage service
+port = 54323
+# File size limit for uploads
+file_size_limit = "50MiB"
+# S3 region (for production)
+s3_region = "us-east-1"
+
+# Storage buckets
+[[storage.buckets]]
+name = "public"
+public = true
+file_size_limit = "50MiB"
+allowed_mime_types = ["image/*", "video/*", "audio/*", "application/pdf"]
+
+[[storage.buckets]]
+name = "private"
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["application/*", "text/*"]
+
+[[storage.buckets]]
+name = "avatars"
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
+# Edge Functions configuration
+[functions]
+# Verify JWT tokens in functions
+verify_jwt = false
+# Import map for Deno imports
+import_map = "./supabase/functions/import_map.json"
+
+# Realtime configuration
+[realtime]
+# Enable realtime service
+enabled = true
+# Port for realtime service
+port = 54324
+
+# Analytics configuration
+[analytics]
+# Enable analytics
+enabled = false
+# Port for analytics service
+port = 54327
+
+# Local development configuration
+[local_config]
+# Use legacy file format
+use_legacy = false
+
+# Branch-specific configurations (for Supabase branching)
+[remotes.staging]
+project_id = "your-staging-project-id"
+
+[remotes.staging.db.seed]
+sql_paths = ["./supabase/seeds/staging.sql"]
+
+[remotes.staging.auth.external.github]
+client_id = "env(STAGING_GITHUB_CLIENT_ID)"
+secret = "env(STAGING_GITHUB_SECRET)"
+
+[remotes.production]
+project_id = "your-production-project-id"
+
+[remotes.production.db.seed]
+sql_paths = ["./supabase/seeds/production.sql"]
