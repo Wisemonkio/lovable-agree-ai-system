@@ -132,20 +132,3 @@ port = 54327
 [local_config]
 # Use legacy file format
 use_legacy = false
-
-# Branch-specific configurations (for Supabase branching)
-[remotes.staging]
-project_id = "your-staging-project-id"
-
-[remotes.staging.db.seed]
-sql_paths = ["./supabase/seeds/staging.sql"]
-
-[remotes.staging.auth.external.github]
-client_id = "env(STAGING_GITHUB_CLIENT_ID)"
-secret = "env(STAGING_GITHUB_SECRET)"
-
-[remotes.production]
-project_id = "your-production-project-id"
-
-[remotes.production.db.seed]
-sql_paths = ["./supabase/seeds/production.sql"]
