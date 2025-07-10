@@ -11,102 +11,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const sendEmployeeNotificationEmail = async (employee: Employee) => {
-  try {
-    console.log(`📧 Sending notification email to: ${employee.email}`)
-    
-    const emailSubject = 'Please sign your agreement'
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h2 style="color: #333; margin-bottom: 20px;">Welcome to ${employee.client_name || 'Our Company'}!</h2>
-          
-          <p style="color: #555; font-size: 16px; line-height: 1.6;">Dear ${employee.first_name} ${employee.last_name},</p>
-          
-          <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Congratulations on your new position as <strong>${employee.job_title}</strong>! We are excited to have you join our team.
-          </p>
-          
-          <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            Your employment agreement has been generated and is ready for your review and signature. Please take some time to carefully read through the document.
-          </p>
-          
-          <div style="background-color: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #2c5aa0; margin-top: 0;">Next Steps:</h3>
-            <ul style="color: #555; font-size: 16px; line-height: 1.6;">
-              <li>Review your employment agreement carefully</li>
-              <li>Sign the agreement electronically when ready</li>
-              <li>Contact us if you have any questions</li>
-            </ul>
-          </div>
-          
-          <p style="color: #555; font-size: 16px; line-height: 1.6;">
-            If you have any questions about your agreement or need clarification on any terms, please don't hesitate to reach out to us.
-          </p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p style="color: #777; font-size: 14px; margin: 0;">
-              Best regards,<br>
-              <strong>${employee.client_name || 'Your Company'} Team</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-    `
-    
-    const emailText = `
-      Welcome to ${employee.client_name || 'Our Company'}!
-      
-      Dear ${employee.first_name} ${employee.last_name},
-      
-      Congratulations on your new position as ${employee.job_title}! We are excited to have you join our team.
-      
-      Your employment agreement has been generated and is ready for your review and signature. Please take some time to carefully read through the document.
-      
-      Next Steps:
-      - Review your employment agreement carefully
-      - Sign the agreement electronically when ready
-      - Contact us if you have any questions
-      
-      If you have any questions about your agreement or need clarification on any terms, please don't hesitate to reach out to us.
-      
-      Best regards,
-      ${employee.client_name || 'Your Company'} Team
-    `
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
-
-    const { data, error } = await supabase.functions.invoke('send-email-api', {
-      body: {
-        to: employee.email,
-        subject: emailSubject,
-        html: emailHtml,
-        text: emailText
-      }
-    })
-
-    if (error) {
-      console.error('❌ Email sending failed:', error)
-      return { success: false, error: error.message }
-    }
-
-    console.log('✅ Email sent successfully:', data)
-    return { success: true, data }
-
-  } catch (error) {
-    console.error('💥 Error in sendEmployeeNotificationEmail:', error)
-    return { success: false, error: error.message }
-  }
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -276,20 +180,9 @@ serve(async (req) => {
     console.log('📋 Creating generated agreement record...')
     await createGeneratedAgreementRecord(finalEmployeeId, fileName, publicUrl, processingTime, employee)
     
-    // Send notification email to employee
-    console.log('📧 Sending notification email to employee...')
-    const emailResult = await sendEmployeeNotificationEmail(employee)
-    
-    if (emailResult.success) {
-      console.log('✅ Email sent successfully to employee')
-    } else {
-      console.warn('⚠️ Email sending failed but continuing with agreement generation:', emailResult.error)
-      // Note: We don't fail the entire process if email fails
-    }
     
     console.log(`🎉 Agreement generated successfully in ${processingTime}s`)
     console.log(`📊 Template Summary: ${templateSource} template used for ${employee.client_name || 'N/A'}`)
-    console.log(`📧 Email Status: ${emailResult.success ? 'SENT' : 'FAILED'}`)
     console.log('=== AGREEMENT GENERATION COMPLETED ===')
     
     return new Response(
@@ -302,8 +195,7 @@ serve(async (req) => {
           source: templateSource,
           templateId: templateDocId,
           companyName: employee.client_name
-        },
-        emailSent: emailResult.success
+        }
       }),
       { 
         status: 200, 
