@@ -144,7 +144,7 @@ const SendForESignButton: React.FC<SendForESignButtonProps> = ({ employee, onSuc
         onClose={() => setShowClientDialog(false)}
         onSubmit={handleSendForSigning}
         isLoading={isLoading}
-        employeeName={`${employee.first_name} ${employee.last_name}`}
+        employeeName={employee.name}
       />
     </>
   )

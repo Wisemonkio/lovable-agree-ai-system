@@ -24,6 +24,7 @@ export const useEmployees = () => {
       // Transform the data to match our Employee interface
       const transformedData = data?.map(employee => ({
         ...employee,
+        name: employee.first_name && employee.last_name ? `${employee.first_name} ${employee.last_name}`.trim() : employee.first_name || employee.last_name || 'Unknown',
         zoho_sign_status: employee.zoho_sign_status as Employee['zoho_sign_status'],
         // Ensure bonus is handled as string or undefined
         bonus: employee.bonus || undefined
@@ -58,7 +59,7 @@ export const useEmployees = () => {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `employment_agreement_${employee.first_name}_${employee.last_name}.pdf`
+      link.download = `employment_agreement_${employee.name.replace(/\s+/g, '_')}.pdf`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

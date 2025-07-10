@@ -42,7 +42,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">{employee.first_name} {employee.last_name}</h2>
+              <h2 className="text-2xl font-bold">{employee.name}</h2>
               <p className="text-blue-100">{employee.job_title}</p>
             </div>
             <button
@@ -101,7 +101,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, onC
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <p className="text-gray-900">{employee.first_name} {employee.last_name}</p>
+                <p className="text-gray-900">{employee.name}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Email</label>

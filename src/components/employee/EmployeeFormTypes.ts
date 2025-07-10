@@ -1,7 +1,6 @@
 
 export interface EmployeeFormData {
-  firstName: string
-  lastName: string
+  name: string
   email: string
   jobTitle: string
   jobDescription: string

@@ -35,8 +35,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
   } = useTemplateManagement()
   
   const [formData, setFormData] = useState<EmployeeFormData>({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     jobTitle: '',
     jobDescription: '',
@@ -110,8 +109,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       
       // Validate using Zod schema
       EmployeeSecuritySchema.parse({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: formData.name,
         email: formData.email,
         jobTitle: formData.jobTitle,
         annualGrossSalary: formData.annualGrossSalary,
@@ -173,8 +171,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       // Sanitize all text inputs before database insertion
       const sanitizedData = {
         user_id: user.id, // Explicitly set user_id for security
-        first_name: sanitizeInput(formData.firstName),
-        last_name: sanitizeInput(formData.lastName),
+        first_name: sanitizeInput(formData.name.split(' ')[0] || ''),
+        last_name: sanitizeInput(formData.name.split(' ').slice(1).join(' ') || ''),
         email: formData.email.toLowerCase().trim(),
         job_title: sanitizeInput(formData.jobTitle),
         job_description: sanitizeInput(formData.jobDescription),
@@ -224,7 +222,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       try {
         const emailResponse = await supabase.functions.invoke('send-employee-welcome-email', {
           body: {
-            employeeName: `${formData.firstName} ${formData.lastName}`,
+            employeeName: formData.name,
             employeeEmail: formData.email,
             jobTitle: formData.jobTitle,
             companyName: formData.clientName || 'Our Company'

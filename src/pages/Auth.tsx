@@ -40,8 +40,7 @@ const Auth: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: ''
+    name: ''
   })
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -79,8 +78,7 @@ const Auth: React.FC = () => {
     const { error } = await signUp(
       signUpData.email, 
       signUpData.password, 
-      signUpData.firstName, 
-      signUpData.lastName
+      signUpData.name
     )
     
     if (error) {
@@ -214,19 +212,13 @@ const Auth: React.FC = () => {
                 <CardDescription>Create a new account to get started</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <div>
                     <Input
                       type="text"
-                      placeholder="First Name"
-                      value={signUpData.firstName}
-                      onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
-                    />
-                    <Input
-                      type="text"
-                      placeholder="Last Name"
-                      value={signUpData.lastName}
-                      onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
+                      placeholder="Full Name"
+                      value={signUpData.name}
+                      onChange={(e) => setSignUpData({ ...signUpData, name: e.target.value })}
                     />
                   </div>
                   <div>

@@ -13,36 +13,21 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ formData, onC
     <div className="bg-blue-50 p-4 rounded-lg">
       <h3 className="font-semibold text-blue-900 mb-4">Personal Information</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
           <input
             type="text"
-            name="firstName"
+            name="name"
             required
-            value={formData.firstName}
+            value={formData.name}
             onChange={onChange}
+            placeholder="Enter full name"
             className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              validationErrors.firstName ? 'border-red-500' : 'border-gray-300'
+              validationErrors.name ? 'border-red-500' : 'border-gray-300'
             }`}
           />
-          {validationErrors.firstName && (
-            <p className="text-red-600 text-sm mt-1">{validationErrors.firstName}</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-          <input
-            type="text"
-            name="lastName"
-            required
-            value={formData.lastName}
-            onChange={onChange}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              validationErrors.lastName ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {validationErrors.lastName && (
-            <p className="text-red-600 text-sm mt-1">{validationErrors.lastName}</p>
+          {validationErrors.name && (
+            <p className="text-red-600 text-sm mt-1">{validationErrors.name}</p>
           )}
         </div>
         <div>

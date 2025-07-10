@@ -3,15 +3,10 @@ import { z } from 'zod'
 
 // Security validation schemas
 export const EmployeeSecuritySchema = z.object({
-  firstName: z.string()
-    .min(1, 'First name is required')
-    .max(50, 'First name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'First name contains invalid characters'),
-  
-  lastName: z.string()
-    .min(1, 'Last name is required')
-    .max(50, 'Last name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'Last name contains invalid characters'),
+  name: z.string()
+    .min(1, 'Full name is required')
+    .max(100, 'Full name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters'),
   
   email: z.string()
     .email('Invalid email format')

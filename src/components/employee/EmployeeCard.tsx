@@ -41,7 +41,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
         <div className="flex items-start justify-between mb-3">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              {employee.first_name} {employee.last_name}
+              {employee.name}
             </h3>
             <p className="text-gray-600 text-sm">{employee.job_title}</p>
           </div>
