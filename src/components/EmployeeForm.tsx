@@ -220,6 +220,27 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
       setAgreementStatus('completed')
       setSuccess(true)
       
+      // Send welcome email to employee
+      try {
+        const emailResponse = await supabase.functions.invoke('send-employee-welcome-email', {
+          body: {
+            employeeName: `${formData.firstName} ${formData.lastName}`,
+            employeeEmail: formData.email,
+            jobTitle: formData.jobTitle,
+            companyName: formData.clientName || 'Our Company'
+          }
+        })
+        
+        if (emailResponse.error) {
+          console.error('Email sending failed:', emailResponse.error)
+        } else {
+          console.log('Welcome email sent successfully')
+        }
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError)
+        // Don't fail the whole process if email fails
+      }
+      
       setTimeout(() => {
         onSuccess()
       }, 3000)
