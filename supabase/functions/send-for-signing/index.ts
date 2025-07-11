@@ -290,34 +290,68 @@ serve(async (req) => {
   try {
     console.log('=== Send for Signing Function Started ===');
     
-    // Verify we're on the correct Supabase project
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    console.log('🔗 Connected to Supabase URL:', supabaseUrl)
-    if (supabaseUrl && supabaseUrl.includes('kzejmozxbhzkrbfmwmnx')) {
-      console.log('✅ Sign function connected to correct project: kzejmozxbhzkrbfmwmnx')
-    }
-    console.log('Request method:', req.method);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-    
-    // Parse request body once and store it
+    // Parse and validate request body
     requestBody = await req.json();
-    console.log('Request body received:', {
-      employeeId: requestBody.employeeId,
-      hasClientName: !!requestBody.clientName,
-      hasClientEmail: !!requestBody.clientEmail
-    });
     
-    const { employeeId: reqEmployeeId, clientName, clientEmail } = requestBody;
-    employeeId = reqEmployeeId;
-
-    if (!employeeId) {
+    // Enhanced input validation
+    if (!requestBody || typeof requestBody !== 'object') {
+      console.error('❌ Invalid request body format');
       return new Response(JSON.stringify({
-        error: 'Employee ID is required'
+        error: 'Invalid request body format'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    // Validate request size (max 50KB for signing requests)
+    const requestSize = JSON.stringify(requestBody).length;
+    if (requestSize > 50 * 1024) {
+      console.error(`❌ Request too large: ${requestSize} bytes`);
+      return new Response(JSON.stringify({
+        error: 'Request payload too large'
+      }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { employeeId: reqEmployeeId, clientName, clientEmail } = requestBody;
+    employeeId = reqEmployeeId;
+
+    // Strict UUID validation for employee ID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!employeeId || typeof employeeId !== 'string' || !uuidRegex.test(employeeId)) {
+      console.error('❌ Invalid employee ID format:', employeeId);
+      return new Response(JSON.stringify({
+        error: 'Valid employee ID is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Validate client information if provided
+    if (clientName && (typeof clientName !== 'string' || clientName.length > 100)) {
+      return new Response(JSON.stringify({
+        error: 'Invalid client name format'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (clientEmail && (typeof clientEmail !== 'string' || clientEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail))) {
+      return new Response(JSON.stringify({
+        error: 'Invalid client email format'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('✅ Request validation passed');
+    console.log('Validated employee ID:', employeeId);
 
     console.log('Processing employee:', employeeId);
 

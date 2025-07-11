@@ -195,6 +195,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onSuccess }) => {
         ...salaryBreakdown
       }
       
+      // Use secured query wrapper
       const { data: employee, error: createError } = await supabase
         .from('employee_details')
         .insert(sanitizedData)

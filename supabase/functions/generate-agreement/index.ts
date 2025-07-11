@@ -32,22 +32,50 @@ serve(async (req) => {
   
   try {
     const body = await req.json()
-    const { employeeId, employee_id } = body
-    const finalEmployeeId = employeeId || employee_id
     
-    console.log('Request body received:', JSON.stringify(body, null, 2))
-    console.log('Final employee ID to process:', finalEmployeeId)
-    
-    if (!finalEmployeeId) {
-      console.error('❌ Employee ID is missing from request')
+    // Enhanced input validation and sanitization
+    if (!body || typeof body !== 'object') {
+      console.error('❌ Invalid request body format')
       return new Response(
-        JSON.stringify({ error: 'Employee ID is required', success: false }),
+        JSON.stringify({ error: 'Invalid request body', success: false }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
+
+    // Validate request size (max 100KB)
+    const requestSize = JSON.stringify(body).length
+    if (requestSize > 100 * 1024) {
+      console.error(`❌ Request too large: ${requestSize} bytes`)
+      return new Response(
+        JSON.stringify({ error: 'Request payload too large', success: false }),
+        { 
+          status: 413, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const { employeeId, employee_id } = body
+    const finalEmployeeId = employeeId || employee_id
+    
+    // Strict UUID validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!finalEmployeeId || typeof finalEmployeeId !== 'string' || !uuidRegex.test(finalEmployeeId)) {
+      console.error('❌ Invalid or missing employee ID:', finalEmployeeId)
+      return new Response(
+        JSON.stringify({ error: 'Valid employee ID is required', success: false }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('✅ Request validated successfully')
+    console.log('Final employee ID to process:', finalEmployeeId)
 
     console.log(`🚀 Starting agreement generation for employee: ${finalEmployeeId}`)
     
