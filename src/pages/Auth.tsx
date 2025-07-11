@@ -12,7 +12,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 const Auth: React.FC = () => {
   console.log('Auth page rendering')
   
-  const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, user, loading } = useAuth()
+  const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, user, loading, session } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -21,19 +21,36 @@ const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('signin')
+  const [hasFailedLogin, setHasFailedLogin] = useState(false)
   
   // Check if we're in password update mode
   const mode = searchParams.get('mode')
   const isPasswordUpdateMode = mode === 'update-password'
+  
+  // Check if this is a recovery session (password reset)
+  const isRecoverySession = session?.user?.aud === 'authenticated' && mode === 'update-password'
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated but NOT in recovery mode
   useEffect(() => {
-    console.log('Auth useEffect - user:', user, 'loading:', loading)
-    if (user && !loading) {
+    console.log('Auth useEffect - user:', user, 'loading:', loading, 'isRecoverySession:', isRecoverySession)
+    if (user && !loading && !isRecoverySession) {
       console.log('User authenticated, redirecting to dashboard')
       navigate('/dashboard')
     }
-  }, [user, loading, navigate])
+  }, [user, loading, navigate, isRecoverySession])
+
+  // Reset failed login when tab changes or on successful login
+  useEffect(() => {
+    if (activeTab !== 'signin') {
+      setHasFailedLogin(false)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (user && !loading) {
+      setHasFailedLogin(false)
+    }
+  }, [user, loading])
 
   // Sign In Form
   const [signInData, setSignInData] = useState({
@@ -69,6 +86,7 @@ const Auth: React.FC = () => {
     
     if (error) {
       setError(error.message)
+      setHasFailedLogin(true)
     }
     
     setIsLoading(false)
@@ -268,15 +286,17 @@ const Auth: React.FC = () => {
                     Sign In
                   </Button>
                   
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('reset')}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Forgot your password?
-                    </button>
-                  </div>
+                   {hasFailedLogin && (
+                     <div className="text-center">
+                       <button
+                         type="button"
+                         onClick={() => setActiveTab('reset')}
+                         className="text-sm text-primary hover:underline"
+                       >
+                         Forgot your password?
+                       </button>
+                     </div>
+                   )}
                 </form>
                 
                 <div className="relative">
