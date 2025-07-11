@@ -7,18 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const Auth: React.FC = () => {
   console.log('Auth page rendering')
   
-  const { signIn, signUp, signInWithGoogle, user, loading } = useAuth()
+  const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, user, loading } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleSignInLoading, setIsGoogleSignInLoading] = useState(false)
   const [isGoogleSignUpLoading, setIsGoogleSignUpLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('signin')
+  
+  // Check if we're in password update mode
+  const mode = searchParams.get('mode')
+  const isPasswordUpdateMode = mode === 'update-password'
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -41,6 +47,17 @@ const Auth: React.FC = () => {
     password: '',
     confirmPassword: '',
     name: ''
+  })
+
+  // Reset Password Form
+  const [resetPasswordData, setResetPasswordData] = useState({
+    email: ''
+  })
+
+  // Update Password Form
+  const [updatePasswordData, setUpdatePasswordData] = useState({
+    password: '',
+    confirmPassword: ''
   })
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -108,6 +125,56 @@ const Auth: React.FC = () => {
     // Note: Don't set loading to false here - the redirect will happen
   }
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    const { error } = await resetPassword(resetPasswordData.email)
+    
+    if (error) {
+      setError(error.message)
+    } else {
+      setSuccess('Password reset email sent! Please check your inbox and follow the instructions.')
+      setResetPasswordData({ email: '' })
+    }
+    
+    setIsLoading(false)
+  }
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    if (updatePasswordData.password !== updatePasswordData.confirmPassword) {
+      setError('Passwords do not match')
+      setIsLoading(false)
+      return
+    }
+
+    if (updatePasswordData.password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      setIsLoading(false)
+      return
+    }
+
+    const { error } = await updatePassword(updatePasswordData.password)
+    
+    if (error) {
+      setError(error.message)
+    } else {
+      setSuccess('Password updated successfully! You can now sign in with your new password.')
+      setUpdatePasswordData({ password: '', confirmPassword: '' })
+      // Navigate to sign in after successful password update
+      navigate('/auth')
+    }
+    
+    setIsLoading(false)
+  }
+
   if (loading) {
     console.log('Auth page showing loading state')
     return (
@@ -128,11 +195,48 @@ const Auth: React.FC = () => {
         </div>
 
         <Card>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          {isPasswordUpdateMode ? (
+            // Password Update Mode
+            <>
+              <CardHeader>
+                <CardTitle>Update Password</CardTitle>
+                <CardDescription>Enter your new password</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div>
+                    <Input
+                      type="password"
+                      placeholder="New Password"
+                      value={updatePasswordData.password}
+                      onChange={(e) => setUpdatePasswordData({ ...updatePasswordData, password: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      value={updatePasswordData.confirmPassword}
+                      onChange={(e) => setUpdatePasswordData({ ...updatePasswordData, confirmPassword: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Update Password
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          ) : (
+            // Normal Auth Mode
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="reset">Reset Password</TabsTrigger>
+              </TabsList>
 
             <TabsContent value="signin">
               <CardHeader>
@@ -163,6 +267,16 @@ const Auth: React.FC = () => {
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Sign In
                   </Button>
+                  
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('reset')}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
                 </form>
                 
                 <div className="relative">
@@ -294,7 +408,42 @@ const Auth: React.FC = () => {
                 </Button>
               </CardContent>
             </TabsContent>
+
+            <TabsContent value="reset">
+              <CardHeader>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>Enter your email address to receive a password reset link</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <Input
+                      type="email"
+                      placeholder="Email address"
+                      value={resetPasswordData.email}
+                      onChange={(e) => setResetPasswordData({ ...resetPasswordData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Send Reset Email
+                  </Button>
+                  
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('signin')}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Back to sign in
+                    </button>
+                  </div>
+                </form>
+              </CardContent>
+            </TabsContent>
           </Tabs>
+          )}
 
           {error && (
             <div className="p-4">
